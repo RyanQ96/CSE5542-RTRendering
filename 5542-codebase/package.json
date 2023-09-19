@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vue-tsc && vite build --base ./",
     "preview": "vite preview"
   },
   "dependencies": {
     "@types/node": "^20.6.2",
     "vue": "^3.3.4",
-    "vuetify": "^3.3.16"
+    "vuetify": "^3.3.16", 
+    "@mdi/font": "^7.2.96"
   },
   "devDependencies": {
-    "@mdi/font": "^7.2.96",
     "@vitejs/plugin-vue": "^4.2.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
