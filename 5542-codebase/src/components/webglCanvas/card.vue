@@ -30,8 +30,8 @@ onMounted( () => {
     height: 700px;
     background-color: black;
     overflow: hidden;
-    border-radius: 2%; 
     box-sizing: border-box;
+    margin: 0 auto;
 }
 
 

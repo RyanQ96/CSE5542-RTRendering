@@ -1,17 +1,17 @@
 <template>
-  <div>
-    <v-layout>
-      <appbar />
+  <v-layout class="app-layout">
+    <appbar />
+    <v-main>
       <card></card>
-    </v-layout>
-  </div>
+    </v-main>
+  </v-layout>
 </template>
 <script setup lang="ts">
 import appbar from "./components/appbar/index.vue"
 import card from "./components/webglCanvas/card.vue"
 
 </script>
-<style scoped>
+<style>
 .logo {
   height: 6em;
   padding: 1.5em;
