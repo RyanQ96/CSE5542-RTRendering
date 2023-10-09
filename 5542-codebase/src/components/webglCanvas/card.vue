@@ -9,7 +9,7 @@ import inner from './inner.vue';
 import { ref, onMounted } from "vue"
 
 const container = ref<HTMLElement | null>(null);
-const width = ref<number>(700);
+const width = ref<number>(1400);
 const height = ref<number>(700);
 
 const resizeObserver = new ResizeObserver(entries => {
@@ -26,7 +26,7 @@ onMounted( () => {
 <style scoped>
 .canvas-container {
     resize: both;
-    width: 700px;
+    width: 1400px;
     height: 700px;
     background-color: black;
     overflow: hidden;
