@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-app-bar>
-            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 1</v-app-bar-title>
+            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 2</v-app-bar-title>
             <template v-slot:append>
                 Target: &nbsp;<v-btn class="indicator-btn" :icon="iconShape" :color="selectedColor" :style="{transform: selectedShape.includes('vertical')?'rotate(90deg)':'none', border: getBorder}"></v-btn>
             </template>
@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue"
-import { selectedShape, shapeIconMapping, selectedColor } from "@/core/setup-lab1"
+import { selectedShape, shapeIconMapping, selectedColor } from "@/core/setup-lab2"
 
 const iconShape = computed(() => {
     return shapeIconMapping[selectedShape.value]
@@ -32,4 +32,4 @@ watch(() => selectedShape.value + selectedColor.value, () => {
     transition-property: border;
     transition-duration: 0.5s;
 }
-</style>@/core/setup-lab1
+</style>@/core/setup-lab1@/core/setup-lab2

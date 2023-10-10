@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import { bindMouseEvent, bindKeyDownEvent } from "@/core/setup-lab1";
-import { init } from "@/core/drawwebgl";
+import { bindMouseEvent, bindKeyDownEvent } from "@/core/setup-lab2";
+import { init } from "@/core/drawwebgl-new";
 const props = defineProps({
     width: {
         type: Number,
@@ -35,7 +35,7 @@ onMounted(() => {
 
 watch(() => props.width + props.height, () => {
     const canvasComponent = canvas.value as HTMLCanvasElement;
-    init(canvasComponent)
+    init(canvasComponent, false)
 })
 
 </script>
