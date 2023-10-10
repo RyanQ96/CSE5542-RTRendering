@@ -1,4 +1,4 @@
-# CSE5542-RTRendering
+# CSE5542-RTRendering Lab 2
 
 ### Content
 * Quick preview (deployed version): <a href="https://ryanq96.github.io/CSE5542-RTRendering/">URL</a>
