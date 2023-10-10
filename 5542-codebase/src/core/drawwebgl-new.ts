@@ -244,7 +244,7 @@ export function drawScene() {
     webgl.clearColor(0.0, 0.0, 0.0, 1.0);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
 
-    drawingCommands.forEach((command) => {
+    drawingCommands.forEach((command: drawCommand) => {
         const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
         webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
         webgl.drawArrays(getWebglShape(command.shape, webgl), command.offset, command.count);

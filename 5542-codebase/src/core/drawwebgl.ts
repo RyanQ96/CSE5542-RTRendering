@@ -1,5 +1,5 @@
 import { initFragmentShader, initVertexShader } from "@/utils/shaderUtils";
-import { matmul, getInverseProjectionMatrix, getProjectionMatrix} from "@/utils/matrix"
+import { getInverseProjectionMatrix, getProjectionMatrix} from "@/utils/matrix"
 import type { TAllowedShape } from "./setup-lab2"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
 

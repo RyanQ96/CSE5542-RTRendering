@@ -77,7 +77,7 @@ export function getInverseProjectionMatrix(layout: TCoordSpaceLayout) {
     ])
 }
 
-export function matmul(A: Float32Array, B: Float32Array, ...args: Float32Array[]) {
+export function matmul(A: Float32Array, B: Float32Array, ...args: Float32Array[]): Float32Array {
     let C = new Float32Array(16);
     for (var i = 0; i < 4; i++) {
         for (var j = 0; j < 4; j++) {

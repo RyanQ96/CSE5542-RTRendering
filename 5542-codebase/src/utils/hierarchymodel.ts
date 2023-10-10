@@ -59,7 +59,7 @@ export class HObj {
     }
 
     render(dataContainer: number[], drawingCommands: any[]) {
-
+        console.log(dataContainer, drawingCommands)
     }
 
     renderObjectOfInterestBox(dataContainer: number[], drawingCommands: any[]) {
@@ -89,7 +89,7 @@ export class HObj {
     }
 
     renderCandidateObjectOfInterestBox(dataContainer: number[], drawingCommands: any[]) {
-        const color = [0, 0, 0, 1.0]
+        const color = [1, 1, 1, 1.0]
         let jsArrayData = []
         const newCenterPoint = [this.centerPoint[0], this.centerPoint[1]]
         const bottomRightPoint = [newCenterPoint[0] + this.radius / 1.5, newCenterPoint[1] - this.radius / 1.5]

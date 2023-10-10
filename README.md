@@ -1,6 +1,4 @@
 # CSE5542-RTRendering
------
-## Lab 1: 2D Drawing 
 
 ### Content
 * Quick preview (deployed version): <a href="https://ryanq96.github.io/CSE5542-RTRendering/">URL</a>
