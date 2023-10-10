@@ -1,4 +1,4 @@
-##<center>CSE5542-RTRendering Lab 2</center>
+<h2 style="text-align: center">CSE5542-RTRendering Lab 2</h2>
 
 ![image](./assets/lab2.png)
 ### Content
