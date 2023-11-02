@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { angle_x, angle_y, changeYaw, changePitch, changeRoll, changeCameraRedraw, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, scaleUpObjectOfInterest, scaleDownObjectOfInterest, rotateGlobal, enterGlobalMode, exitGlobalMode, changeObjectOfInterestColor } from "./drawwebgl-new";
+import { angle_x, angle_y, changeYaw, changePitch, changeRoll, changeCameraRedraw, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
 import { globalInstance } from "@/utils/hierarchymodel";
 
 
@@ -227,13 +227,13 @@ function onDocumentMouseMove(event: MouseEvent) {
     changeCameraRedraw();
 }
 
-function onDocumentMouseUp(event: MouseEvent) {
+function onDocumentMouseUp() {
     document.removeEventListener('mousemove', onDocumentMouseMove, false);
     document.removeEventListener('mouseup', onDocumentMouseUp, false);
     document.removeEventListener('mouseout', onDocumentMouseOut, false);
 }
 
-function onDocumentMouseOut(event: MouseEvent) {
+function onDocumentMouseOut() {
     document.removeEventListener('mousemove', onDocumentMouseMove, false);
     document.removeEventListener('mouseup', onDocumentMouseUp, false);
     document.removeEventListener('mouseout', onDocumentMouseOut, false);

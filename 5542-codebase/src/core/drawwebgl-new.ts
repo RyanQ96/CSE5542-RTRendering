@@ -1,5 +1,7 @@
+declare var mat4: any
+
 import { initFragmentShader, initVertexShader } from "@/utils/shaderUtils";
-import { matmul, getInverseProjectionMatrix, getProjectionMatrix, getPerspectiveProjectionMatrix, getFrustumProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv, getViewMatrix } from "@/utils/matrix"
+import { matmul, getInverseProjectionMatrix, getPerspectiveProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv, getViewMatrix } from "@/utils/matrix"
 import type { TAllowedShape, TAllowedColor } from "./setup-lab3"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab3"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
@@ -304,26 +306,26 @@ function updateDataBuffers(jsArrayData: number[]) {
     webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(jsArrayData), webgl.STATIC_DRAW)
 }
 
-function getWebglShape(shape: TAllowedShape, webgl: WebGLRenderingContext) {
-    switch (shape) {
-        case "point":
-            return webgl.POINTS
-        case "triangle":
-            return webgl.TRIANGLES
-        case "square":
-            return webgl.TRIANGLE_FAN
-        case "vertical-line":
-            return webgl.LINES
-        case "horizontal-line":
-            return webgl.LINES
-        case "circle":
-            return webgl.TRIANGLE_FAN
-        case "cylinder":
-            return webgl.TRIANGLES
-        default:
-            return webgl.POINTS
-    }
-}
+// function getWebglShape(shape: TAllowedShape, webgl: WebGLRenderingContext) {
+//     switch (shape) {
+//         case "point":
+//             return webgl.POINTS
+//         case "triangle":
+//             return webgl.TRIANGLES
+//         case "square":
+//             return webgl.TRIANGLE_FAN
+//         case "vertical-line":
+//             return webgl.LINES
+//         case "horizontal-line":
+//             return webgl.LINES
+//         case "circle":
+//             return webgl.TRIANGLE_FAN
+//         case "cylinder":
+//             return webgl.TRIANGLES
+//         default:
+//             return webgl.POINTS
+//     }
+// }
 
 
 export function setShapeObjectsFromGlobal(shape: TAllowedShape) {

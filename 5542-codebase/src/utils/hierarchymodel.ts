@@ -79,7 +79,7 @@ export class HObj {
     }
 
     render(dataContainer: number[], drawingCommands: any[], indicesData: any[]) {
-        console.log(dataContainer, drawingCommands)
+        console.log(dataContainer, drawingCommands, indicesData)
     }
 
     renderObjectOfInterestBox(dataContainer: number[], drawingCommands: any[]) {
@@ -236,7 +236,7 @@ export class Sphere extends HObj {
         this.indices = indices
     }
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
-        const offset = dataContainer.length / 7
+        // const offset = dataContainer.length / 7
         const existingIndicesLength = indicesDataContainer.length
         this.data.forEach(e => dataContainer.push(e))
         this.indices.forEach(e => indicesDataContainer.push(e))
@@ -286,7 +286,7 @@ export class Cube extends HObj {
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
-        const offset = dataContainer.length / 7
+        // const offset = dataContainer.length / 7
         const existingIndicesLength = indicesDataContainer.length
         this.data.forEach(e => dataContainer.push(e))
         this.indices.forEach(e => indicesDataContainer.push(e))
@@ -391,7 +391,7 @@ export class Cylinder extends HObj {
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
-        const offset = dataContainer.length / 7
+        // const offset = dataContainer.length / 7
         const existingIndicesLength = indicesDataContainer.length
         this.data.forEach(e => dataContainer.push(e))
         this.indices.forEach(e => indicesDataContainer.push(e))

@@ -1,3 +1,6 @@
+declare var mat4: any
+
+
 export type TCoordSpaceLayout = {
     xMin: number,
     xMax: number,
