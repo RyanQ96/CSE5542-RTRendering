@@ -1,21 +1,21 @@
 <template>
     <div>
         <v-app-bar>
-            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 2</v-app-bar-title>
-            <template v-slot:append>
-                Target: &nbsp;<v-btn class="indicator-btn" :icon="iconShape" :color="selectedColor" :style="{transform: selectedShape.includes('vertical')?'rotate(90deg)':'none', border: getBorder}"></v-btn>
-            </template>
+            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 3</v-app-bar-title>
+            <!-- <template v-slot:append>
+                
+            </template> -->
         </v-app-bar>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue"
-import { selectedShape, shapeIconMapping, selectedColor } from "@/core/setup-lab3"
+import { ref, watch } from "vue"
+import { selectedShape, selectedColor } from "@/core/setup-lab3"
 
-const iconShape = computed(() => {
-    return shapeIconMapping[selectedShape.value]
-})
+// const iconShape = computed(() => {
+//     return shapeIconMapping[selectedShape.value]
+// })
 
 const getBorder = ref("none")
 
