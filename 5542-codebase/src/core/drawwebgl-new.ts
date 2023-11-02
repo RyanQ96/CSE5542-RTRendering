@@ -245,7 +245,6 @@ function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
 
 function initShape() {
 
-
     const bot = new Cylinder(0.4, 0.4, 0.05, 300, 100, [0.89, 0.6941, 0.5725, 1]);
     bot.translateDelta([0, -0.55, 0])
 
@@ -277,7 +276,6 @@ function initShape() {
     const sphere2 = new Sphere(0.1, 30, 30, [0.6, 0.24, 0.44, 0.6], cube2);
     sphere2.translateDelta([0, 0.15 + 0.1, 0])
 
-
     targetShapeOfMove = cube
 
     globalInstance.rotateX(0)
@@ -307,26 +305,7 @@ function updateDataBuffers(jsArrayData: number[]) {
     webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(jsArrayData), webgl.STATIC_DRAW)
 }
 
-// function getWebglShape(shape: TAllowedShape, webgl: WebGLRenderingContext) {
-//     switch (shape) {
-//         case "point":
-//             return webgl.POINTS
-//         case "triangle":
-//             return webgl.TRIANGLES
-//         case "square":
-//             return webgl.TRIANGLE_FAN
-//         case "vertical-line":
-//             return webgl.LINES
-//         case "horizontal-line":
-//             return webgl.LINES
-//         case "circle":
-//             return webgl.TRIANGLE_FAN
-//         case "cylinder":
-//             return webgl.TRIANGLES
-//         default:
-//             return webgl.POINTS
-//     }
-// }
+
 
 
 export function setShapeObjectsFromGlobal(shape: TAllowedShape) {
@@ -383,13 +362,7 @@ export function drawScene() {
     webgl.enableVertexAttribArray(v4InColorIndex)
     webgl.vertexAttribPointer(v4InColorIndex, 4, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT)
 
-    // const indexBuffer = webgl.createBuffer();
-    // webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    // webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesData), webgl.STATIC_DRAW);
-    // webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-
-
-    // webgl.clearColor(0.0, 0.0, 0.0, 1.0);
+    
     webgl.clearColor(0.9, 0.9, 0.9, 1);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
 
@@ -404,11 +377,6 @@ export function drawScene() {
         webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
         webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
     })
-    // const command = drawingCommands[1]
-    // console.log(command)
-    // const uProjectMatPos = webgl.getUniformLocation(programObject, "TransformMat");
-    // webgl.uniformMatrix4fv(uProjectMatPos, false, command.matrix);
-    // webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, command.offset + command.count)
 }
 
 function htmlCoordToWebglCoord(htmlCoord: number[], containerSize: number[], canvasSpaceLayout: TCoordSpaceLayout) {
@@ -418,6 +386,5 @@ function htmlCoordToWebglCoord(htmlCoord: number[], containerSize: number[], can
     const inverseScaleMatrix = getInverseScaleMatrix(globalInstance.scaleTotal, globalInstance.scaleTotal)
     const inverseRotateMatrix = getInverseRotateMatrix(globalInstance.rotateTotal)
     const inverseTransformMat = matmul(inverseScaleMatrix, inverseRotateMatrix, inverseProjectMat)
-    // return [inverseTransformMat[0] * mappedX + inverseTransformMat[12], inverseTransformMat[5] * mappedY + inverseTransformMat[13]]
     return Array.from(matv(inverseTransformMat, new Float32Array([mappedX, mappedY, 0, 1]))).slice(0, 2)
 }

@@ -317,6 +317,9 @@ export class Cylinder extends HObj {
         const stackHeight = height / stacks;
         const topColor = [...color]
         topColor[3] -= .4
+        topColor[0] += .1
+        topColor[1] += .1
+        topColor[2] += .1
         vertices.push(0, 0, 0, ...topColor);
         for (let sliceNumber = 0; sliceNumber < slices; sliceNumber++) {
             let theta = sliceNumber * 2 * Math.PI / slices;
