@@ -232,9 +232,10 @@ function initWebGL() {
     webgl.viewport(0, 0, canvas.width, canvas.height);
     webgl.clearColor(0.0, 0.0, 0.0, 1.0);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
+    webgl.enable(webgl.DEPTH_TEST);
     console.log("init!")
     ProjectMat = getPerspectiveProjectionMatrix(canvas);
-}
+}   
 
 function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
     canvas.width = canvas.clientWidth;
