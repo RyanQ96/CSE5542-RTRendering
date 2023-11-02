@@ -10,7 +10,7 @@
 import inner from './inner.vue';
 import { ref, onMounted } from "vue"
 import { toggleCameraFreeMode, cameraFreeMode } from "@/core/drawwebgl-new";
-// import { globalMode } from "@/core/setup-lab3";
+
 const container = ref<HTMLElement | null>(null);
 const width = ref<number>(700);
 const height = ref<number>(700);
