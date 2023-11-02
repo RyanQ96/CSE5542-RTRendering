@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import { bindMouseEvent, bindKeyDownEvent } from "@/core/setup-lab2";
+import { bindCameraMouseControlEvent, bindKeyDownEvent } from "@/core/setup-lab3";
 import { init } from "@/core/drawwebgl-new";
 const props = defineProps({
     width: {
@@ -28,14 +28,15 @@ const computedStyle = computed(() => {
 const canvas = ref<HTMLCanvasElement | null>(null);
 onMounted(() => {
     const canvasComponent = canvas.value as HTMLCanvasElement;
-    bindMouseEvent(canvasComponent)
+    // bindMouseEvent(canvasComponent)
     bindKeyDownEvent()
+    bindCameraMouseControlEvent()
     init(canvasComponent)
 })
 
 watch(() => props.width + props.height, () => {
-    const canvasComponent = canvas.value as HTMLCanvasElement;
-    init(canvasComponent, false)
+    // const canvasComponent = canvas.value as HTMLCanvasElement;
+    // init(canvasComponent, false)
 })
 
 </script>
@@ -53,4 +54,4 @@ watch(() => props.width + props.height, () => {
     position: absolute;
     transform: translate(-50%, -50%);
 }
-</style>
+</style>@/core/setup-lab3

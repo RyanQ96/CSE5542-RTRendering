@@ -1,31 +1,11 @@
 import { initFragmentShader, initVertexShader } from "@/utils/shaderUtils";
-import { matmul, getInverseProjectionMatrix, getProjectionMatrix, getPerspectiveProjectionMatrix, getFrustumProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv, getViewMatrix } from "@/utils/matrix"
+import { matmul, getInverseProjectionMatrix, getProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv } from "@/utils/matrix"
 import type { TAllowedShape, TAllowedColor } from "./setup-lab3"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab3"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
-import { globalInstance, HObj, Cylinder, Cube, Sphere } from "@/utils/hierarchymodel"
-import { ref } from "vue";
+import { globalInstance, Circle, Triangle, HorizentalLine, VerticalLine, Square, Point, HObj } from "@/utils/hierarchymodel"
 
 // addShape, drawScene, init, clearCanvas
-
-// export let angle_x = ref(0.5); // in degrees
-// export let angle_y = ref(0.26); // in degrees 
-
-// export let angle_x = ref(-0.11); // in degrees
-// export let angle_y = ref(0.312); // in degrees 
-
-export let angle_x = ref(-0.0579); // in degrees
-export let angle_y = ref(0.25099); // in degrees 
-
-let targetShapeOfMove: HObj | null = null
-
-const cameraDistance = 4;
-
-export let cameraFreeMode = ref(false)
-
-export let yaw = ref(0)
-export let pitch = ref(-5)
-export let roll = ref(0)
 
 const canvasSpaceLayout: TCoordSpaceLayout = {
     xMin: -700,
@@ -40,11 +20,10 @@ const vertexShader = /* glsl */ `
     attribute vec4 v4InColor;  
     uniform mat4 ProjectMat; 
     uniform mat4 TransformMat; 
-    uniform mat4 viewMatrix;
     varying vec4 v4OutColor;    
     void main() {
         v4OutColor = v4InColor;
-        gl_Position = ProjectMat * viewMatrix * TransformMat * vec4(v3Position, 1.0); 
+        gl_Position = ProjectMat * TransformMat * vec4(v3Position, 1.0); 
         gl_PointSize = 10.0;
     }
 `
@@ -61,9 +40,7 @@ interface drawCommand {
     shape: TAllowedShape,
     offset: number,
     count: number,
-    matrix: Float32Array,
-    vertices: number[],
-    indices: number[]
+    matrix: Float32Array
 }
 
 let canvas: HTMLCanvasElement;
@@ -73,57 +50,12 @@ let vertexShaderObject: WebGLShader;
 let programObject: WebGLProgram;
 let triangleBuffer: WebGLBuffer;
 let jsArrayData: number[] = []
-
-
-let ProjectMat: Float32Array;
 // let drawingCommands: drawCommand[] = []
 
 let lastObjectOfInterest: HObj | null = null
 
-
-export function toggleCameraFreeMode() {
-    cameraFreeMode.value = !cameraFreeMode.value
-    drawScene()
-}
-
-
-export function changeYaw(value: number) {
-    yaw.value += value
-    drawScene()
-}
-
-export function changePitch(value: number) {
-    pitch.value += value
-    drawScene()
-}
-
-export function changeRoll(value: number) {
-    roll.value += value
-    drawScene()
-}
-
-export function moveTargetObjectLeft() {
-    targetShapeOfMove?.translateDelta([-0.05, 0, 0])
-    drawScene()
-}
-
-export function moveTargetObjectRight() {
-    targetShapeOfMove?.translateDelta([0.05, 0, 0])
-    drawScene()
-}
-
-export function moveTargetObjectForward() {
-    targetShapeOfMove?.translateDelta([0, 0, 0.05])
-    drawScene()
-}
-
-export function moveTargetObjectBack() {
-    targetShapeOfMove?.translateDelta([0, 0, -0.05])
-    drawScene()
-}
-
 export function enterGlobalMode() {
-    globalMode.value = true;
+    globalMode.value = true; 
     lastObjectOfInterest = globalInstance.objectOfInterest
     globalInstance.setObjectOfInterest(null)
     drawScene()
@@ -131,7 +63,7 @@ export function enterGlobalMode() {
 
 export function exitGlobalMode() {
     globalMode.value = false;
-    globalInstance.setObjectOfInterest(lastObjectOfInterest)
+    globalInstance.setObjectOfInterest(lastObjectOfInterest) 
     drawScene()
 }
 
@@ -173,15 +105,10 @@ export function confirmObjectOfInterest() {
         globalInstance.candidateObjectOfInterest = null
         selectedShape.value = globalInstance.objectOfInterest?.objectType as TAllowedShape
         drawScene()
-        return true
+        return true 
     }
-    return false
+    return false 
 }
-
-export function changeCameraRedraw() {
-    drawScene()
-}
-
 
 export function addShape(centerPoint: number[], shape: TAllowedShape, color: number[]) {
     console.log("logging: addShape", centerPoint, shape, color)
@@ -203,7 +130,7 @@ export function rotateGlobal(theta: number) {
 
 export function init(canvasEl: HTMLCanvasElement, reInit = true) {
     canvas = canvasEl
-    if (reInit) initShape()
+    if (reInit) initShape() 
     initWebGL()
     initShader()
     initProgram()
@@ -231,7 +158,6 @@ function initWebGL() {
     webgl.clearColor(0.0, 0.0, 0.0, 1.0);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
     console.log("init!")
-    ProjectMat = getPerspectiveProjectionMatrix(canvas);
 }
 
 function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
@@ -241,43 +167,12 @@ function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
 }
 
 function initShape() {
-
-
-    const bot = new Cylinder(0.4, 0.4, 0.05, 300, 100, [0.89, 0.6941, 0.5725, 1]);
-    bot.translateDelta([0, -0.55, 0])
-
-
-    const feet = new Cylinder(0.1, 0.1, 1.2, 300, 100, [0.89, 0.6941, 0.5725, 1], bot);
-    feet.translateDelta([0, 0.05, 0])
-
-    const tableSurface = new Cylinder(1.5, 1.5, 0.07, 300, 100, [0.89, 0.6941, 0.5725, 1], feet);
-    tableSurface.translateDelta([0, 1.2, 0])
-
-    const sphere = new Sphere(0.2, 30, 30, [1, 0, 0, 1], tableSurface);
-    sphere.translateDelta([0.8, 0.07 + 0.2, 0])
-
-    const cube = new Cube(0.5, [0.3, 0.2, .8, .2], tableSurface);
-    cube.translateDelta([-0, 0.07 + 0.25, -0])
-
-
-    const cubeA = new Cube(0.3, [0.1, 0.4, .2, .2], cube);
-    cubeA.translateDelta([-0.46, -0.05, 0])
-    cubeA.rotate(4)
-
-    const sphereS = new Sphere(0.05, 30, 30, [1, 0, 0, 1], cube);
-    sphereS.translateDelta([-0.59, -0.25 + 0.05, 0])
-
-
-    const cube2 = new Cube(0.3, [0.4, 0.4, .2, .2], cube);
-    cube2.translateDelta([0, 0.25 + 0.15, 0])
-
-    const sphere2 = new Sphere(0.1, 30, 30, [0.6, 0.24, 0.44, 0.6], cube2);
-    sphere2.translateDelta([0, 0.15 + 0.1, 0])
-
-
-    targetShapeOfMove = cube
-
-    globalInstance.rotateX(0)
+    new Circle([-650, 300])
+    new Triangle([-550, 298])
+    new Square([-450, 300])
+    new HorizentalLine([-350, 300])
+    new VerticalLine([-250, 300])
+    new Point([-150, 300]) 
 }
 
 function initShader() {
@@ -318,8 +213,6 @@ function getWebglShape(shape: TAllowedShape, webgl: WebGLRenderingContext) {
             return webgl.LINES
         case "circle":
             return webgl.TRIANGLE_FAN
-        case "cylinder":
-            return webgl.TRIANGLES
         default:
             return webgl.POINTS
     }
@@ -334,78 +227,28 @@ export function setShapeObjectsFromGlobal(shape: TAllowedShape) {
 
 
 export function drawScene() {
-
-    const { drawingCommands, indicesData } = globalInstance.render()
-    // updateDataBuffers(drawingData)
-    console.log(indicesData)
+    const {drawingData, drawingCommands} = globalInstance.render() 
+    updateDataBuffers(drawingData)
     const v3Position = webgl.getAttribLocation(programObject, "v3Position")
     const v4InColorIndex = webgl.getAttribLocation(programObject, 'v4InColor')
 
     const uProjectMat = webgl.getUniformLocation(programObject, "ProjectMat");
-    // const ProjectMat = getFrustumProjectionMatrix(canvasSpaceLayout);
-
-    // console.log(ProjectMat)
+    const ProjectMat = getProjectionMatrix(canvasSpaceLayout)
     webgl.uniformMatrix4fv(uProjectMat, false, ProjectMat);
-    // console.log(ProjectMat)
-
-    let eye = [0, 1, 4];  // Adjust this as needed
-    const center = [0, 0, 0];
-    const up = [0, 1, 0];
-
-    let viewMatrix: Float32Array | null = null; 
-    if (cameraFreeMode.value) {
-        console.log(angle_x.value, angle_y.value)
-        let ex = Math.sin(angle_x.value) * cameraDistance;
-        let ez = Math.cos(angle_x.value * 2) * cameraDistance;
-        let ey = Math.sin(angle_y.value) * cameraDistance;
-        let dist = Math.sqrt(ex * ex + ey * ey + ez * ez);
-        ex = (ex / dist) * cameraDistance;
-        ey = (ey / dist) * cameraDistance;
-        ez = (ez / dist) * cameraDistance;
-
-        eye = [ex, ey, ez];
-        viewMatrix = mat4.lookAt(mat4.create(), eye, center, up);
-    } else {
-        viewMatrix = getViewMatrix(yaw.value, pitch.value, roll.value, eye);
-    }
-
-
-    const uViewMat = webgl.getUniformLocation(programObject, "viewMatrix");
-    webgl.uniformMatrix4fv(uViewMat, false, viewMatrix as any);
-
 
     webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer)
     webgl.enableVertexAttribArray(v3Position)
     webgl.vertexAttribPointer(v3Position, 3, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0)
     webgl.enableVertexAttribArray(v4InColorIndex)
     webgl.vertexAttribPointer(v4InColorIndex, 4, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT)
-
-    // const indexBuffer = webgl.createBuffer();
-    // webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    // webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesData), webgl.STATIC_DRAW);
-    // webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-
-
-    // webgl.clearColor(0.0, 0.0, 0.0, 1.0);
-    webgl.clearColor(0.9, 0.9, 0.9, 1);
+    webgl.clearColor(0.0, 0.0, 0.0, 1.0);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
 
     drawingCommands.forEach((command: drawCommand) => {
-        updateDataBuffers(command.vertices)
-        const indexBuffer = webgl.createBuffer();
-        webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(command.indices), webgl.STATIC_DRAW);
-        webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-        console.log(command)
         const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
         webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
-        webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
+        webgl.drawArrays(getWebglShape(command.shape, webgl), command.offset, command.count);
     })
-    // const command = drawingCommands[1]
-    // console.log(command)
-    // const uProjectMatPos = webgl.getUniformLocation(programObject, "TransformMat");
-    // webgl.uniformMatrix4fv(uProjectMatPos, false, command.matrix);
-    // webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, command.offset + command.count)
 }
 
 function htmlCoordToWebglCoord(htmlCoord: number[], containerSize: number[], canvasSpaceLayout: TCoordSpaceLayout) {

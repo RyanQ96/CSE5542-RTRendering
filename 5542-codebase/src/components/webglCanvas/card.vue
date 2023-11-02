@@ -1,16 +1,18 @@
 <template>
-    <h1 style="padding-bottom: 10px; text-align: center; font-size: 2rem">{{globalMode ? "Global Mode" : "Local Mode"}}</h1>
-    <div ref="container" class="canvas-container"> 
-        <inner :width="width" :height="height"/>
+    <h1 style="padding-bottom: 10px; text-align: center; font-size: 2rem">Scene<v-btn class="indicator-btn" icon="mdi-eye"
+            style="background-color: transparant; " variant="text" @click="toggleFreeMode" :color="cameraFreeMode?'green': 'black'"></v-btn></h1>
+    <div ref="container" class="canvas-container">
+        <inner :width="width" :height="height" />
     </div>
 </template>
 
 <script setup lang="ts">
 import inner from './inner.vue';
 import { ref, onMounted } from "vue"
-import { globalMode } from "@/core/setup-lab2";
+import { toggleCameraFreeMode, cameraFreeMode } from "@/core/drawwebgl-new";
+// import { globalMode } from "@/core/setup-lab3";
 const container = ref<HTMLElement | null>(null);
-const width = ref<number>(1400);
+const width = ref<number>(700);
 const height = ref<number>(700);
 
 const resizeObserver = new ResizeObserver(entries => {
@@ -19,7 +21,12 @@ const resizeObserver = new ResizeObserver(entries => {
         height.value = entry.contentRect.height;
     }
 });
-onMounted( () => {
+
+function toggleFreeMode() {
+    toggleCameraFreeMode()
+}
+
+onMounted(() => {
     resizeObserver.observe(container.value!);
 }) 
 </script>
@@ -27,15 +34,13 @@ onMounted( () => {
 <style scoped>
 .canvas-container {
     resize: both;
-    width: 1400px;
+    width: 700px;
     height: 700px;
     background-color: black;
     overflow: hidden;
     box-sizing: border-box;
     margin: 0 auto;
-    box-shadow: rgba(0, 0, 0, 0.45) -7.5px 7.5px 10px !important; 
+    box-shadow: rgba(0, 0, 0, 0.45) -7.5px 7.5px 10px !important;
     border: 0.5px solid rgb(204, 204, 204);
 }
-
-
 </style>
