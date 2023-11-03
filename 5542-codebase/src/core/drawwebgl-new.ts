@@ -21,7 +21,7 @@ export let angle_y = ref(0.25099); // in degrees
 
 let targetShapeOfMove: HObj | null = null
 
-const cameraDistance = 4;
+const cameraDistance = ref(4);
 
 export let cameraFreeMode = ref(false)
 
@@ -85,6 +85,11 @@ let lastObjectOfInterest: HObj | null = null
 
 export function toggleCameraFreeMode() {
     cameraFreeMode.value = !cameraFreeMode.value
+    drawScene()
+}
+
+export function zoomInOutCamera(amount: number){
+    cameraDistance.value += amount
     drawScene()
 }
 
@@ -374,13 +379,13 @@ export function drawScene() {
     let viewMatrix: Float32Array | null = null; 
     if (cameraFreeMode.value) {
         console.log(angle_x.value, angle_y.value)
-        let ex = Math.sin(angle_x.value) * cameraDistance;
-        let ez = Math.cos(angle_x.value * 2) * cameraDistance;
-        let ey = Math.sin(angle_y.value) * cameraDistance;
+        let ex = Math.sin(angle_x.value) * cameraDistance.value;
+        let ez = Math.cos(angle_x.value * 2) * cameraDistance.value;
+        let ey = Math.sin(angle_y.value) * cameraDistance.value;
         let dist = Math.sqrt(ex * ex + ey * ey + ez * ez);
-        ex = (ex / dist) * cameraDistance;
-        ey = (ey / dist) * cameraDistance;
-        ez = (ez / dist) * cameraDistance;
+        ex = (ex / dist) * cameraDistance.value;
+        ey = (ey / dist) * cameraDistance.value;
+        ez = (ez / dist) * cameraDistance.value;
 
         eye = [ex, ey, ez];
         viewMatrix = mat4.lookAt(mat4.create(), eye, center, up);

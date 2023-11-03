@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { angle_x, angle_y, changeYaw, changePitch, changeRoll, changeCameraRedraw, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
+import { zoomInOutCamera, angle_x, angle_y, changeYaw, changePitch, changeRoll, changeCameraRedraw, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
 import { globalInstance } from "@/utils/hierarchymodel";
 
 
@@ -88,7 +88,7 @@ function mouseupRotationHandler() {
     }
 }
 
-const changeAmount = .3; 
+const changeAmount = .3;
 export function bindKeyDownEvent() {
     document.addEventListener("keydown", (event: KeyboardEvent) => {
         const { key } = event;
@@ -110,20 +110,20 @@ export function bindKeyDownEvent() {
                 break;
             case "p":
                 changePitch(-changeAmount)
-                break;  
-            case "Y": 
+                break;
+            case "Y":
                 changeYaw(+changeAmount)
-                break; 
+                break;
             case "y":
                 changeYaw(-changeAmount)
                 break;
             case "R":
                 changeRoll(changeAmount)
-                break;         
-            case "r": 
+                break;
+            case "r":
                 changeRoll(-changeAmount)
-                break;  
-            
+                break;
+
             // case "p":
             //     selectedShape.value = "point";
             //     setShapeObjectsFromGlobal("point")
@@ -185,7 +185,20 @@ export function bindKeyDownEvent() {
 
 
 export function bindCameraMouseControlEvent() {
+    
     document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+    function zoomCameraDistance(delta_Y:number) {
+        // Do something with the scroll position
+        zoomInOutCamera(delta_Y);
+    }
+
+    document.addEventListener("wheel", (event:  WheelEvent) => {
+
+        zoomCameraDistance(event.deltaY*0.005);
+        
+    });
+
 }
 
 function onDocumentMouseDown(event: MouseEvent) {
