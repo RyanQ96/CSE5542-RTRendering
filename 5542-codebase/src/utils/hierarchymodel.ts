@@ -162,11 +162,12 @@ export class Global extends HObj {
     public indicesData: any[] = []
     public objectOfInterest: HObj | null = null
     public candidateObjectOfInterest: HObj | null = null
-    constructor() {
-        super()
+    constructor(centerPoint: number[] = [0, 0, 0], parent: HObj | null = null) {
+        super(centerPoint, parent)
     }
-    render() {
+    render(dataContainer: number[] | null = null, commandContainer: any[] | null = null, indicesDataContainer: any[] | null = null) {
         // drawGlobal()
+        console.log(this.children)
         this.drawingData = []
         this.indicesData = []
         this.drawingCommands = []
@@ -174,6 +175,15 @@ export class Global extends HObj {
             this.children.forEach((child: any) => {
                 child.render(this.drawingData, this.drawingCommands, this.indicesData);
             });
+        }
+        if (dataContainer) {
+            dataContainer.push(...this.drawingData)
+        }
+        if (commandContainer) {
+            commandContainer.push(...this.drawingCommands)
+        }
+        if (indicesDataContainer) {
+            indicesDataContainer.push(...this.indicesData)
         }
         return { drawingData: this.drawingData, drawingCommands: this.drawingCommands, indicesData: this.indicesData }
     }

@@ -5,7 +5,7 @@ import { matmul, getInverseProjectionMatrix, getPerspectiveProjectionMatrix, get
 import type { TAllowedShape, TAllowedColor } from "./setup-lab3"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab3"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
-import { globalInstance, HObj, Cylinder, Cube, Sphere } from "@/utils/hierarchymodel"
+import { globalInstance, HObj, Cylinder, Cube, Sphere, Global } from "@/utils/hierarchymodel"
 import { ref } from "vue";
 
 // addShape, drawScene, init, clearCanvas
@@ -269,7 +269,7 @@ function initShape() {
     const sphereS = new Sphere(0.05, 30, 30, [1, 0, 0, 1], cube);
     sphereS.translateDelta([-0.59, -0.25 + 0.05, 0])
 
-
+    
     const cube2 = new Cube(0.3, [0.4, 0.4, .2, .2], cube);
     cube2.translateDelta([0, 0.25 + 0.15, 0])
 
@@ -278,7 +278,44 @@ function initShape() {
 
     targetShapeOfMove = cube
 
-    globalInstance.rotateX(0)
+    const virtualAlbum = new Global([0,0,0], tableSurface);    
+    virtualAlbum.translateDelta([0.2, 0, 0])
+    virtualAlbum.rotateY(.01)
+
+
+    const ablumfeet = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet.translateDelta([0, 0.07 + 0.2, 1])
+    ablumfeet.scale(.15, 1.7, .15)
+    ablumfeet.rotateX(.5)
+
+    
+    const ablumfeet2 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet2.translateDelta([0.4, 0.07 + 0.2, 1])
+    ablumfeet2.scale(.15, 1.7, .15)
+    ablumfeet2.rotateX(.5)
+
+
+    const ablumfeet3 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet3.translateDelta([0.2, 0.08, 1.1])
+    ablumfeet3.scale(1.2, .15, .15)
+
+
+    const ablumfeet4 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet4.translateDelta([0.2, 0.467, 0.895])
+    ablumfeet4.scale(1.2, .15, .15)
+
+
+    const ablumBackground = new Cube(0.3, [1, 1, 1, .2], virtualAlbum);
+    ablumBackground.translateDelta([0.2, 0.28, 1.0])
+    ablumBackground.scale(1.2, 1.5, .02)
+    ablumBackground.rotateX(.5)
+
+
+    const ablumbackfeet = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumbackfeet.translateDelta([0.2, 0.15, 0.92])
+    ablumbackfeet.scale(0.3, 0.98, .08)
+    ablumbackfeet.rotateX(-.3)
+   
 }
 
 function initShader() {
