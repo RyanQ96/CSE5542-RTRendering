@@ -25,4 +25,4 @@
       * <a><code style="color: green">hierarchymodel.ts</code>: hierarchical model, including <code>HObj</code>class, its children class <code>Global</code> and each one of the shapes <code>Sphere</code>, <code>Cylinder</code>, <code>Cube</code> el al.</a>
     * <code>core</code>: core code for eventhander and webgl rendering
       * <code>setup-lab3.ts</code>: setup event listener 
-      * <code>drawwebgl-new.ts</code>: main rendering code
+      * <code>drawwebgl-new.ts</code>: main rendering code, function <code>initShape</code> is the function that create all the shapes (table, cube, sphere, album) and vertical node.
