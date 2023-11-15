@@ -1,5 +1,5 @@
 <template>
-    <h1 style="padding-bottom: 10px; text-align: center; font-size: 2rem">Scene<v-btn class="indicator-btn" icon="mdi-eye"
+    <h1 style="position: absolute; padding-bottom: 10px; text-align: center; font-size: 2rem"><v-btn class="indicator-btn" icon="mdi-eye"
             style="background-color: transparant; " variant="text" @click="toggleFreeMode" :color="cameraFreeMode?'green': 'black'"></v-btn></h1>
     <div ref="container" class="canvas-container">
         <inner :width="width" :height="height" />
@@ -12,8 +12,8 @@ import { ref, onMounted } from "vue"
 import { toggleCameraFreeMode, cameraFreeMode } from "@/core/drawwebgl-new";
 
 const container = ref<HTMLElement | null>(null);
-const width = ref<number>(700);
-const height = ref<number>(700);
+const width = ref<number>(window.innerWidth);
+const height = ref<number>(window.innerHeight - 64);
 
 const resizeObserver = new ResizeObserver(entries => {
     for (let entry of entries) {
@@ -28,14 +28,18 @@ function toggleFreeMode() {
 
 onMounted(() => {
     resizeObserver.observe(container.value!);
+    console.log(document.querySelector(".canvas-container"))
+    width.value = container.value!.clientWidth;
+    height.value = container.value!.clientHeight;
+    console.log(width.value, height.value)
 }) 
 </script>
 
 <style scoped>
 .canvas-container {
     resize: both;
-    width: 700px;
-    height: 700px;
+    width: 100%;
+    height: 100%;
     background-color: black;
     overflow: hidden;
     box-sizing: border-box;

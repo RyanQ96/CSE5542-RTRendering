@@ -195,3 +195,10 @@ body {
     background-color: #f9f9f9;
   }
 }
+
+.v-main {
+  width: 100%; 
+  height: calc(100% - 64px);
+  padding-top: 0!important; 
+  margin-top: 64px!important; 
+}

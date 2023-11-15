@@ -1,12 +1,14 @@
 declare var mat4: any
 
-import { initFragmentShader, initVertexShader } from "@/utils/shaderUtils";
+import { initFragmentShader, initVertexShader, createAttributeSetters, createUniformSetters } from "@/utils/webglUtils";
 import { matmul, getInverseProjectionMatrix, getPerspectiveProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv, getViewMatrix } from "@/utils/matrix"
 import type { TAllowedShape, TAllowedColor } from "./setup-lab3"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab3"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
 import { globalInstance, HObj, Cylinder, Cube, Sphere, Global } from "@/utils/hierarchymodel"
-import { ref } from "vue";
+import { createOBJ } from "@/utils/obj";
+import { ref, watch } from "vue";
+import { setUniforms } from "@/utils/objUtils"
 
 // addShape, drawScene, init, clearCanvas
 
@@ -23,11 +25,30 @@ let targetShapeOfMove: HObj | null = null
 
 const cameraDistance = ref(4);
 
-export let cameraFreeMode = ref(false)
+export let cameraFreeMode = ref(true)
 
 export let yaw = ref(0)
 export let pitch = ref(-5)
 export let roll = ref(0)
+
+export let lightPosX = ref(0)
+export let lightPosY = ref(1)
+export let lightPosZ = ref(3)
+
+
+export let towerRotateAngle = ref(1)
+
+
+let numOfTexturesRegistered = ref(0);
+
+
+export function registerTexture() {
+    numOfTexturesRegistered.value += 1
+}
+
+export function finishTexture() {
+    numOfTexturesRegistered.value -= 1
+}
 
 const canvasSpaceLayout: TCoordSpaceLayout = {
     xMin: -700,
@@ -38,24 +59,134 @@ const canvasSpaceLayout: TCoordSpaceLayout = {
 
 const vertexShader = /* glsl */ `
     precision  lowp  float; 
-    attribute vec3 v3Position; 
-    attribute vec4 v4InColor;  
+    attribute vec3 a_position; 
+    attribute vec4 a_color;  
+    attribute vec3 a_normal;
+    attribute vec3 a_tangent;
+    attribute vec2 a_texcoord;
+
     uniform mat4 ProjectMat; 
     uniform mat4 TransformMat; 
     uniform mat4 viewMatrix;
-    varying vec4 v4OutColor;    
+    uniform mat4 normalMatrix; 
+
+    uniform vec3 eye_pos; // pos of camera
+
+    uniform vec4 light_pos; 
+    uniform vec4 ambient_coef;
+    uniform vec4 diffuse_coef;
+    uniform vec4 specular_coef;
+    uniform float mat_shininess; 
+
+    uniform vec4 light_ambient; 
+    uniform vec4 light_diffuse; 
+    uniform vec4 light_specular;
+
+
+    uniform bool useTexture;
+    
+
+    varying vec4 v4OutColor; 
+    varying vec4 vPos; 
+    varying vec2 vTextureCoord;
+    varying vec3 v_normal;
+    varying vec3 v_tangent; 
+    varying vec3 v_surfaceToView;
+    varying vec4 light_pos_in_eye; 
+
     void main() {
-        v4OutColor = v4InColor;
-        gl_Position = ProjectMat * viewMatrix * TransformMat * vec4(v3Position, 1.0); 
+
+        v4OutColor = a_color;
+        vPos = viewMatrix * TransformMat * vec4(a_position, 1.0);
+        light_pos_in_eye = viewMatrix * light_pos;
+        v_surfaceToView = normalize(-vec3(vPos));
+        v_normal = normalize(vec3(normalMatrix*vec4(a_normal,0.0)));
+        if (useTexture) {
+            vTextureCoord = a_texcoord;
+            v_tangent = a_tangent; 
+        }
+        gl_Position = ProjectMat * viewMatrix * TransformMat * vec4(a_position, 1.0); 
         gl_PointSize = 10.0;
     }
 `
 
 const fragmentShader = /* glsl */ `
-    precision mediump float; 
+    precision mediump float;
+    uniform bool useTexture; 
+    uniform sampler2D normalMap;
+    uniform sampler2D diffuseMap;
+    uniform sampler2D specularMap;
+    
+    uniform vec4 light_pos; 
+    uniform vec4 ambient_coef;
+    uniform vec4 diffuse_coef;
+    uniform vec4 specular_coef;
+    uniform float mat_shininess; 
+
+    uniform vec4 light_ambient; 
+    uniform vec4 light_diffuse; 
+    uniform vec4 light_specular;    
+
+    uniform vec3 eye_pos; // pos of camera
+
     varying vec4 v4OutColor;
+    varying vec4 vPos; 
+    varying vec2 vTextureCoord;
+    varying vec3 v_normal;
+    varying vec3 v_tangent; 
+    varying vec3 v_surfaceToView;
+    varying vec4 light_pos_in_eye;
+
     void main() {
-        gl_FragColor = v4OutColor; // set all fragments to red
+        if (useTexture) {
+            vec3 normal = normalize(v_normal) * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+            vec3 tangent = normalize(v_tangent) * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+            vec3 bitangent = normalize(cross(normal, tangent));
+            mat3 tbn = mat3(tangent, bitangent, normal);
+            normal = texture2D(normalMap, vTextureCoord).rgb * 2. - 1.;
+            normal = normalize(tbn * normal);
+            vec3 light_vector = normalize(vec3(light_pos_in_eye - vPos));
+            vec3 eye_vector = normalize(v_surfaceToView);
+            vec4 ambient = ambient_coef * light_ambient * .1; 
+            float ndotl = max(dot(v_normal, light_vector), 0.0);
+
+            vec4 diffuseMapColor = texture2D(diffuseMap, vTextureCoord);
+            vec4 diffuse = diffuse_coef * light_diffuse * ndotl * diffuseMapColor;
+
+            vec3 R = normalize(2.0 * ndotl *v_normal-eye_vector);
+            // vec3 R= normalize(vec3(reflect(-light_vector, v_normal))); 
+            float rdotv = max(dot(R, eye_vector), 0.0);
+
+            vec4 specular;  
+            if (ndotl>0.0) {
+                vec4 specularMapColor = texture2D(specularMap, vTextureCoord);
+                specular = specular_coef * light_specular*pow(rdotv, mat_shininess) * specularMapColor; 
+                // specular = vec4(1,1,0,1);
+            } else {
+                specular = vec4(0,0,0,1);
+            }
+            // gl_FragColor = vec4(ambient);
+            gl_FragColor = (specular + ambient + diffuse); // set all fragments to red
+        } else {
+            vec4 texColor = v4OutColor;
+            vec3 light_vector = normalize(vec3(light_pos_in_eye - vPos));
+            vec3 eye_vector = normalize(v_surfaceToView);
+            vec4 ambient = ambient_coef * light_ambient * texColor; 
+            float ndotl = max(dot(v_normal, light_vector), 0.0); 
+            vec4 diffuse = diffuse_coef * light_diffuse* ndotl * texColor;
+            vec3 R= normalize(vec3(reflect(-light_vector, v_normal))); 
+            // vec3 R = normalize(2.0 * ndotl *v_normal-eye_vector);
+            float rdotv = max(dot(R, eye_vector), 0.0);
+            vec4 specular;  
+            if (ndotl>0.0) {
+                specular = specular_coef * light_specular * pow(rdotv, mat_shininess); 
+                // diffuse = vec4(0,1,0,1) * ndotl; 
+            } else {
+                specular = vec4(0,0,0,1); 
+                // diffuse = vec4(1,0,0,1);
+            }
+            gl_FragColor = specular + ambient + diffuse; // set all fragments to red
+        }
     }
 `
 
@@ -65,8 +196,21 @@ interface drawCommand {
     count: number,
     matrix: Float32Array,
     vertices: number[],
-    indices: number[]
+    indices: number[],
+    commandFunc?: CallableFunction,
+    normals?: number[]
 }
+
+interface TSetter {
+    [a: string]: CallableFunction
+}
+
+export interface programContext {
+    program: WebGLProgram,
+    attribSetters: TSetter,
+    uniformSetters: TSetter
+}
+
 
 let canvas: HTMLCanvasElement;
 let webgl: WebGLRenderingContext;
@@ -75,6 +219,18 @@ let vertexShaderObject: WebGLShader;
 let programObject: WebGLProgram;
 let triangleBuffer: WebGLBuffer;
 let jsArrayData: number[] = []
+let programContext: programContext;
+
+let light_ambient = [1, 1, 1, 1];
+let light_diffuse = [1, 1, 1, 1];
+let light_specular = [1, 1, 1, 1];
+// let light_pos = [0, 1, 3, 0];   // eye space position 
+
+let mat_ambient = [0.15, 0.15, 0.15, 1];
+let mat_diffuse = [1.5, 1.5, 1.5, 1];
+let mat_specular = [1, 1, 1, 1];
+let mat_shine = [10];
+
 
 
 let ProjectMat: Float32Array;
@@ -83,12 +239,31 @@ let ProjectMat: Float32Array;
 let lastObjectOfInterest: HObj | null = null
 
 
+let lightBulbObj: HObj | null = null
+export function changeLightPosX(value: number) {
+    lightPosX.value += value
+    lightBulbObj.translate([lightPosX.value, lightPosY.value, lightPosZ.value])
+    drawScene()
+}
+
+export function changeLightPosY(value: number) {
+    lightPosY.value += value
+    lightBulbObj.translate([lightPosX.value, lightPosY.value, lightPosZ.value])
+    drawScene()
+}
+
+export function changeLightPosZ(value: number) {
+    lightPosZ.value += value
+    lightBulbObj.translate([lightPosX.value, lightPosY.value, lightPosZ.value])
+    drawScene()
+}
+
 export function toggleCameraFreeMode() {
     cameraFreeMode.value = !cameraFreeMode.value
     drawScene()
 }
 
-export function zoomInOutCamera(amount: number){
+export function zoomInOutCamera(amount: number) {
     cameraDistance.value += amount
     drawScene()
 }
@@ -106,6 +281,11 @@ export function changePitch(value: number) {
 
 export function changeRoll(value: number) {
     roll.value += value
+    drawScene()
+}
+
+export function rotateTargetShapeY(value: number) {
+    targetShapeOfMove?.rotateY(value)
     drawScene()
 }
 
@@ -149,7 +329,6 @@ export function detectCandidateObjectOfInterest(centerPoint: number[]) {
 }
 
 export function scaleUpObjectOfInterest() {
-    console.log(globalMode.value)
     if (globalMode.value) {
         globalInstance.scale(1.2, 1.2)
     } else {
@@ -208,14 +387,23 @@ export function rotateGlobal(theta: number) {
 }
 
 
-export function init(canvasEl: HTMLCanvasElement, reInit = true) {
+export async function init(canvasEl: HTMLCanvasElement, reInit = true) {
     canvas = canvasEl
-    if (reInit) initShape()
     initWebGL()
+    if (reInit) await initShape()
     initShader()
     initProgram()
     initBuffers()
-    drawScene()
+    watch(numOfTexturesRegistered, (newVal) => {
+        if (newVal === 0) {
+            drawScene()
+        }
+    })
+    // setInterval(() => {
+    //     const rotateAmount = .05
+    //     towerRotateAngle.value += rotateAmount; 
+    //     rotateTargetShapeY(rotateAmount)
+    // }, 30)
 }
 
 export function clearCanvas() {
@@ -239,25 +427,29 @@ function initWebGL() {
     webgl.clear(webgl.COLOR_BUFFER_BIT);
     webgl.enable(webgl.DEPTH_TEST);
     console.log("init!")
-    ProjectMat = getPerspectiveProjectionMatrix(canvas);
-}   
+    // ProjectMat = getPerspectiveProjectionMatrix(canvas);
+}
 
 function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
+    console.log(canvas.clientWidth, canvas.clientHeight)
     webgl.viewport(0, 0, canvas.width, canvas.height);
 }
 
-function initShape() {
+async function initShape() {
 
-    const bot = new Cylinder(0.4, 0.4, 0.05, 300, 100, [0.89, 0.6941, 0.5725, 1]);
-    bot.translateDelta([0, -0.55, 0])
+    const lightBulb = new Sphere(0.02, 30, 30, [1, 0.6, 0.2, 1]);
+    lightBulb.translate([lightPosX.value, lightPosY.value, lightPosZ.value])
+    lightBulbObj = lightBulb
 
+    const bot = new Cylinder(0.4, 0.4, 0.05, 60, 100, [0.89, 0.6941, 0.5725, 1]);
+    bot.translateDelta([0, -0.95, 0])
 
-    const feet = new Cylinder(0.1, 0.1, 1.2, 300, 100, [0.89, 0.6941, 0.5725, 1], bot);
+    const feet = new Cylinder(0.1, 0.1, 1.2, 60, 100, [0.89, 0.6941, 0.5725, 1], bot);
     feet.translateDelta([0, 0.05, 0])
 
-    const tableSurface = new Cylinder(1.5, 1.5, 0.07, 300, 100, [0.89, 0.6941, 0.5725, 1], feet);
+    const tableSurface = new Cylinder(1.5, 1.5, 0.07, 60, 100, [0.89, 0.6941, 0.5725, 1], feet);
     tableSurface.translateDelta([0, 1.2, 0])
 
     const sphere = new Sphere(0.2, 30, 30, [1, 0, 0, 1], tableSurface);
@@ -274,16 +466,15 @@ function initShape() {
     const sphereS = new Sphere(0.05, 30, 30, [1, 0, 0, 1], cube);
     sphereS.translateDelta([-0.59, -0.25 + 0.05, 0])
 
-    
+
     const cube2 = new Cube(0.3, [0.4, 0.4, .2, .2], cube);
     cube2.translateDelta([0, 0.25 + 0.15, 0])
 
     const sphere2 = new Sphere(0.1, 30, 30, [0.6, 0.24, 0.44, 0.6], cube2);
     sphere2.translateDelta([0, 0.15 + 0.1, 0])
 
-    targetShapeOfMove = cube
 
-    const virtualAlbum = new Global([0,0,0], tableSurface);    
+    const virtualAlbum = new Global([0, 0, 0], tableSurface);
     virtualAlbum.translateDelta([0.2, 0, 0])
     virtualAlbum.rotateY(.01)
 
@@ -293,7 +484,7 @@ function initShape() {
     ablumfeet.scale(.15, 1.7, .15)
     ablumfeet.rotateX(.5)
 
-    
+
     const ablumfeet2 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
     ablumfeet2.translateDelta([0.4, 0.07 + 0.2, 1])
     ablumfeet2.scale(.15, 1.7, .15)
@@ -320,12 +511,21 @@ function initShape() {
     ablumbackfeet.translateDelta([0.2, 0.15, 0.92])
     ablumbackfeet.scale(0.3, 0.98, .08)
     ablumbackfeet.rotateX(-.3)
-   
+
+    const towerHref = "https://webglfundamentals.org/webgl/resources/models/windmill/windmill.obj"
+    const obj = await createOBJ(webgl, towerHref, tableSurface, registerTexture, finishTexture)
+    // const obj = await createOBJ(webgl, towerHref)
+    obj.scale(0.1, 0.1, 0.1)
+    obj.translateDelta([-0.8, 0.07, 0.7])
+    obj.rotateY(1)
+
+    // targetShapeOfMove = obj
+
 }
 
 function initShader() {
-    vertexShaderObject = initVertexShader(vertexShader, webgl)!
-    fragmentShaderObject = initFragmentShader(fragmentShader, webgl)!
+    vertexShaderObject = initVertexShader(vertexShader, webgl)
+    fragmentShaderObject = initFragmentShader(fragmentShader, webgl)
 }
 
 function initProgram() {
@@ -334,6 +534,17 @@ function initProgram() {
     webgl.attachShader(programObject, fragmentShaderObject)
     webgl.linkProgram(programObject)
     webgl.useProgram(programObject)
+
+    const attriSetters = createAttributeSetters(webgl, programObject)
+    const uniformSetters = createUniformSetters(webgl, programObject)
+
+    programContext = {
+        program: programObject,
+        attribSetters: attriSetters,
+        uniformSetters: uniformSetters
+    }
+
+    console.log("programContext: ", programContext)
 }
 
 function initBuffers() {
@@ -359,15 +570,14 @@ export function setShapeObjectsFromGlobal(shape: TAllowedShape) {
 
 export function drawScene() {
 
-    const { drawingCommands, indicesData } = globalInstance.render()
+    const { drawingCommands} = globalInstance.render()
+    console.log(drawingCommands)
     // updateDataBuffers(drawingData)
-    console.log(indicesData)
-    const v3Position = webgl.getAttribLocation(programObject, "v3Position")
-    const v4InColorIndex = webgl.getAttribLocation(programObject, 'v4InColor')
+
 
     const uProjectMat = webgl.getUniformLocation(programObject, "ProjectMat");
     // const ProjectMat = getFrustumProjectionMatrix(canvasSpaceLayout);
-
+    ProjectMat = getPerspectiveProjectionMatrix(canvas);
     // console.log(ProjectMat)
     webgl.uniformMatrix4fv(uProjectMat, false, ProjectMat);
     // console.log(ProjectMat)
@@ -376,9 +586,8 @@ export function drawScene() {
     const center = [0, 0, 0];
     const up = [0, 1, 0];
 
-    let viewMatrix: Float32Array | null = null; 
+    let viewMatrix: Float32Array | null = null;
     if (cameraFreeMode.value) {
-        console.log(angle_x.value, angle_y.value)
         let ex = Math.sin(angle_x.value) * cameraDistance.value;
         let ez = Math.cos(angle_x.value * 2) * cameraDistance.value;
         let ey = Math.sin(angle_y.value) * cameraDistance.value;
@@ -397,27 +606,87 @@ export function drawScene() {
     const uViewMat = webgl.getUniformLocation(programObject, "viewMatrix");
     webgl.uniformMatrix4fv(uViewMat, false, viewMatrix as any);
 
-
-    webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer)
-    webgl.enableVertexAttribArray(v3Position)
-    webgl.vertexAttribPointer(v3Position, 3, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0)
-    webgl.enableVertexAttribArray(v4InColorIndex)
-    webgl.vertexAttribPointer(v4InColorIndex, 4, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT)
-
-    
     webgl.clearColor(0.9, 0.9, 0.9, 1);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
+    // let light_ambient = [1, 1, 1, 1];
+    // let light_diffuse = [1, 1, 1, 1];
+    // let light_specular = [1, 1, 1, 1];
+    // let light_pos = [0, 0, 0, 1];   // eye space position 
 
+    // let mat_ambient = [.5, .5, .5, 1];
+    // let mat_diffuse = [0.8, 0.8, 0.8, 1];
+    // let mat_specular = [1, 1, 1, 1];
+    // let mat_shine = [50];
     drawingCommands.forEach((command: drawCommand) => {
-        updateDataBuffers(command.vertices)
-        const indexBuffer = webgl.createBuffer();
-        webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(command.indices), webgl.STATIC_DRAW);
-        webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-        console.log(command)
-        const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
-        webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
-        webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
+        let normalMatrix = mat4.create();
+        mat4.identity(normalMatrix);
+        mat4.multiply(normalMatrix, normalMatrix, viewMatrix);
+        mat4.multiply(normalMatrix, normalMatrix, command.matrix);
+        normalMatrix = mat4.inverse(normalMatrix);
+        mat4.transpose(normalMatrix, normalMatrix);
+        if (command.shape === "obj-general") {
+            command.commandFunc(webgl, programContext, {
+                ProjectMat,
+                viewMatrix,
+                normalMatrix,
+                eye_pos: eye,
+                light_ambient,
+                light_diffuse,
+                light_specular,
+                light_pos: [lightPosX.value, lightPosY.value, lightPosZ.value, 0],
+                ambient_coef: mat_ambient,
+                diffuse_coef: mat_diffuse,
+                specular_coef: mat_specular,
+                mat_shininess: mat_shine[0],
+            })
+        } else {
+            updateDataBuffers(command.vertices)
+
+            const a_normal = webgl.getAttribLocation(programObject, "a_normal")
+            const normalBuffer = webgl.createBuffer();
+            webgl.bindBuffer(webgl.ARRAY_BUFFER, normalBuffer);
+            webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(command.normals), webgl.STATIC_DRAW);
+
+            webgl.bindBuffer(webgl.ARRAY_BUFFER, normalBuffer);
+            webgl.enableVertexAttribArray(a_normal);
+            webgl.vertexAttribPointer(a_normal, 3, webgl.FLOAT, false, 0, 0);
+
+            const a_position = webgl.getAttribLocation(programObject, "a_position")
+            const a_colorIndex = webgl.getAttribLocation(programObject, 'a_color')
+            webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer)
+            webgl.enableVertexAttribArray(a_position)
+            webgl.vertexAttribPointer(a_position, 3, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0)
+            webgl.enableVertexAttribArray(a_colorIndex)
+            webgl.vertexAttribPointer(a_colorIndex, 4, webgl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT)
+            // webgl.enableVertexAttribArray(a_normal);
+            // webgl.vertexAttribPointer(a_normal, 3, webgl.FLOAT, false, 10 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT); 
+
+
+            const indexBuffer = webgl.createBuffer();
+            webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(command.indices), webgl.STATIC_DRAW);
+            webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+            const uNormalMatrix = webgl.getUniformLocation(programObject, "normalMatrix");
+            webgl.uniformMatrix4fv(uNormalMatrix, false, normalMatrix);
+            const uUseTexture = webgl.getUniformLocation(programObject, "useTexture");
+            webgl.uniform1i(uUseTexture, 0);
+            const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
+
+            setUniforms(programContext, {
+                eye_pos: eye,
+                light_ambient,
+                light_diffuse,
+                light_specular,
+                light_pos: [lightPosX.value, lightPosY.value, lightPosZ.value, 0],
+                ambient_coef: mat_ambient,
+                diffuse_coef: mat_diffuse,
+                specular_coef: mat_specular,
+                mat_shininess: mat_shine[0],
+            })
+
+            webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
+            webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
+        }
     })
 }
 

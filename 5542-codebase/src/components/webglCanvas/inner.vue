@@ -26,12 +26,12 @@ const computedStyle = computed(() => {
 })
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-onMounted(() => {
+onMounted(async () => {
     const canvasComponent = canvas.value as HTMLCanvasElement;
     // bindMouseEvent(canvasComponent)
     bindKeyDownEvent()
     bindCameraMouseControlEvent()
-    init(canvasComponent)
+    await init(canvasComponent)
 })
 
 watch(() => props.width + props.height, () => {

@@ -29,10 +29,10 @@ export function getProjectionMatrix(layout: TCoordSpaceLayout) {
 }
 
 export function getPerspectiveProjectionMatrix(canvas: HTMLCanvasElement) {
-    const width = canvas.clientWidth; 
-    const height = canvas.clientHeight; 
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
     const aspect = width / height;
-    
+
     return mat4.perspective(mat4.create(), Math.PI / 3, aspect, 0.1, 100.0)
 }
 
@@ -74,15 +74,15 @@ export function getInverseRotateMatrix(theta: number) {
         0, 0, 0, 1.0]);
 }
 
-export function getInverseScaleMatrix(x: number, y: number, z:number=1) {
+export function getInverseScaleMatrix(x: number, y: number, z: number = 1) {
     return new Float32Array([
         1 / x, 0, 0, 0,
         0, 1 / y, 0, 0,
-        0, 0, 1/z, 0,
+        0, 0, 1 / z, 0,
         0, 0, 0, 1])
 }
 
-export function getScaleMatrix(x: number, y: number, z: number=1) {
+export function getScaleMatrix(x: number, y: number, z: number = 1) {
     return new Float32Array([
         x, 0, 0, 0,
         0, y, 0, 0,
@@ -94,7 +94,7 @@ export function getTransiationMatrix(x: number, y: number, z: number = 0) {
     return new Float32Array([
         1, 0, 0, 0,
         0, 1, 0, 0,
-        0, 0 , 1, 0,
+        0, 0, 1, 0,
         x, y, z, 1])
 }
 
@@ -182,3 +182,55 @@ export function getViewMatrix(yaw: number, pitch: number, roll: number, cameraPo
 
     return viewMatrix;
 }
+
+
+export function addVector(a: number[] | Float32Array, b: number[] | Float32Array): Float32Array {
+    let res = a.map((v, ndx) => v + b[ndx])
+    return new Float32Array(res)
+}
+
+
+export function subtractVector(a: number[] | Float32Array, b: number[] | Float32Array): Float32Array {
+    let res = a.map((v, ndx) => v - b[ndx])
+    return new Float32Array(res)
+}
+
+
+export function scaleVector(v: number[] | Float32Array, s: number): Float32Array {
+    return new Float32Array(v.map(v => v * s))
+}
+
+
+export function normalizeVector(v: number[] | Float32Array | any): Float32Array {
+    let len = Math.sqrt(v.reduce((sum, v) => sum + v * v, 0))
+    if (length > 0.00001) {
+        return scaleVector(v, 1 / len)
+    } else {
+        return new Float32Array(v.length)
+    }
+}
+
+
+export function inverse(a) {
+    let b = a
+    var c = a[0], d = a[1], e = a[2], g = a[3], f = a[4], h = a[5], i = a[6], j = a[7], k = a[8], l = a[9], o = a[10], m = a[11], n = a[12], p = a[13], r = a[14], s = a[15], A = c * h - d * f, B = c * i - e * f, t = c * j - g * f, u = d * i - e * h, v = d * j - g * h, w = e * j - g * i, x = k * p - l * n, y = k * r - o * n, z = k * s - m * n, C = l * r - o * p, D = l * s - m * p, E = o * s - m * r, q = 1 / (A * E - B * D + t * C + u * z - v * y + w * x);
+    b[0] = (h * E - i * D + j * C) * q;
+    b[1] = ( - d * E + e * D - g * C) * q;
+    b[2] = (p * w - r * v + s * u) * q;
+    b[3] = ( - l * w + o * v - m * u) * q;
+    b[4] = ( - f * E + i * z - j * y) * q;
+    b[5] = (c * E - e * z + g * y) * q;
+    b[6] = ( - n * w + r * t - s * B) * q;
+    b[7] = (k * w - o * t + m * B) * q;
+    b[8] = (f * D - h * z + j * x) * q;
+    b[9] = ( - c * D + d * z - g * x) * q;
+    b[10] = (n * v - p * t + s * A) * q;
+    b[11] = ( - k * v + l * t - m * A) * q;
+    b[12] = ( - f * C + h * y - i * x) * q;
+    b[13] = (c * C - d * y + e * x) * q;
+    b[14] = ( - n * u + p * B - r * A) * q;
+    b[15] = (k * u - l * B + o * A) * q;
+    return b
+};
+
+mat4.inverse = inverse; 

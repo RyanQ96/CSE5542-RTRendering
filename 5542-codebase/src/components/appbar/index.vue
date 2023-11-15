@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-app-bar>
-            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 3</v-app-bar-title>
+            <v-app-bar-title style="text-align: left; font-style: italic">CSE 5542-Lab 4</v-app-bar-title>
             <!-- <template v-slot:append>
                 
             </template> -->

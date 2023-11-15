@@ -1,5 +1,4 @@
 import { getIdentifyMatrix, getTransiationMatrix, getRotateMatrix, getScaleMatrix, matmul, getRotateYMatrix, getRotateXMatrix } from "@/utils/matrix"
-import { computeSurfaceNormals, computeVertexNormals } from "./objUtils"
 
 export class HObj {
     public children: HObj[] = []
@@ -7,10 +6,7 @@ export class HObj {
     public rotationMat: Float32Array = getIdentifyMatrix()
     public rotateTotal: number = 0
     public rotateYTotal: number = 0
-    public rotateXTotal: number = 0
-    public verticesForNormal: number[]; 
-    public parts: any;
-    public normals: number[];
+    public rotateXTotal: number = 0 
     public translationMat: Float32Array = getIdentifyMatrix()
     public scaleMat: Float32Array = getIdentifyMatrix()
     public scaleTotal: number = 1
@@ -18,7 +14,6 @@ export class HObj {
     public data: number[] = []
     public indices: number[] = []
     public centerPoint: number[]
-    public colors: number[]
     public objectType: string = "HObj"
     public selectedColor = [1, 0, 0, 1]
     public radius = 40
@@ -111,7 +106,6 @@ export class HObj {
             count: jsArrayData.length / 7,
             matrix: this.getMatrix()
         })
-
     }
 
     renderCandidateObjectOfInterestBox(dataContainer: number[], drawingCommands: any[]) {
@@ -158,17 +152,6 @@ export class HObj {
             return false
         }
     }
-
-    updateNormals() {
-        if (this.indices && this.verticesForNormal) {
-            const surfaceNormals = computeSurfaceNormals(this.verticesForNormal, this.indices);
-            const vertexNormals = computeVertexNormals(this.verticesForNormal, this.indices, surfaceNormals);
-            this.normals = Array.from(vertexNormals)
-            console.log(vertexNormals)
-        } else {
-            alert("no indices or data for: " + this.objectType)
-        }
-    }
 }
 
 
@@ -180,11 +163,11 @@ export class Global extends HObj {
     public objectOfInterest: HObj | null = null
     public candidateObjectOfInterest: HObj | null = null
     constructor(centerPoint: number[] = [0, 0, 0], parent: HObj | null = null) {
-        console.log("!!!!!")
         super(centerPoint, parent)
     }
     render(dataContainer: number[] | null = null, commandContainer: any[] | null = null, indicesDataContainer: any[] | null = null) {
         // drawGlobal()
+        console.log(this.children)
         this.drawingData = []
         this.indicesData = []
         this.drawingCommands = []
@@ -217,85 +200,6 @@ export class Global extends HObj {
     }
 }
 
-
-
-
-// export class Sphere extends HObj {
-//     public objectType: string = "sphere"
-//     constructor(radius: number, slices: number, stacks: number, color: number[], parent: HObj | null = null) {
-//         super([0, 0, 0], parent || globalInstance)
-//         this.initializeData(radius, slices, stacks, color,)
-//     }
-//     initializeData(radius: number, slices: number, stacks: number, color: number[],) {
-//         let vertices = [];
-//         let indices = [];
-//         let colors = [] 
-
-//         for (let latNumber = 0; latNumber <= stacks; latNumber++) {
-//             let theta = latNumber * Math.PI / stacks;
-//             let sinTheta = Math.sin(theta);
-//             let cosTheta = Math.cos(theta);
-
-//             for (let longNumber = 0; longNumber <= slices; longNumber++) {
-//                 let phi = longNumber * 2 * Math.PI / slices;
-//                 let sinPhi = Math.sin(phi);
-//                 let cosPhi = Math.cos(phi);
-
-//                 let x = cosPhi * sinTheta;
-//                 let y = cosTheta;
-//                 let z = sinPhi * sinTheta;
-
-//                 vertices.push(radius * x);
-//                 vertices.push(radius * y);
-//                 vertices.push(radius * z);
-//                 colors.push(...color)
-//                 // vertices.push(...color)
-
-//                 if (latNumber < stacks && longNumber < slices) {
-//                     let first = (latNumber * (slices + 1)) + longNumber;
-//                     let second = first + slices + 1;
-//                     indices.push(first);
-//                     indices.push(second);
-//                     indices.push(first + 1);
-
-//                     indices.push(second);
-//                     indices.push(second + 1);
-//                     indices.push(first + 1);
-//                 }
-//             }
-//         }
-//         this.data = vertices
-//         this.indices = indices
-//         this.colors = colors; 
-//         // this.parts = [
-//         //     {
-//         //         bufferInfo: {
-//         //             attribs: {
-//         //                 a_position: 
-//         //             }, 
-//         //             numElements: this.data.length / 3,
-//         //         }
-//         //     }
-//         // ]
-//     }
-//     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
-//         // const offset = dataContainer.length / 7
-//         const existingIndicesLength = indicesDataContainer.length
-//         this.data.forEach(e => dataContainer.push(e))
-//         this.indices.forEach(e => indicesDataContainer.push(e))
-//         commandContainer.push({
-//             shape: this.objectType,
-//             vertices: this.data,
-//             indices: this.indices,
-//             offset: existingIndicesLength * 2,
-//             count: this.indices.length,
-//             matrix: this.getMatrix(),
-//             useIndices: true
-//         })
-//         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
-//     }
-// }
-
 export class Sphere extends HObj {
     public objectType: string = "sphere"
     constructor(radius: number, slices: number, stacks: number, color: number[], parent: HObj | null = null) {
@@ -304,9 +208,7 @@ export class Sphere extends HObj {
     }
     initializeData(radius: number, slices: number, stacks: number, color: number[],) {
         let vertices = [];
-        let verticesForNormal = [];
         let indices = [];
-        let normals = []
 
         for (let latNumber = 0; latNumber <= stacks; latNumber++) {
             let theta = latNumber * Math.PI / stacks;
@@ -326,30 +228,22 @@ export class Sphere extends HObj {
                 vertices.push(radius * y);
                 vertices.push(radius * z);
                 vertices.push(...color)
-                verticesForNormal.push(radius * x);
-                verticesForNormal.push(radius * y);
-                verticesForNormal.push(radius * z);
-                normals.push(...color.slice(0, 3))
 
                 if (latNumber < stacks && longNumber < slices) {
                     let first = (latNumber * (slices + 1)) + longNumber;
                     let second = first + slices + 1;
                     indices.push(first);
-                    indices.push(first + 1);
                     indices.push(second);
+                    indices.push(first + 1);
 
                     indices.push(second);
-                    indices.push(first + 1);
                     indices.push(second + 1);
+                    indices.push(first + 1);
                 }
             }
         }
         this.data = vertices
-        this.verticesForNormal = verticesForNormal
         this.indices = indices
-        this.normals = normals
-        this.verticesForNormal = verticesForNormal
-        this.updateNormals()
     }
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
         // const offset = dataContainer.length / 7
@@ -360,7 +254,6 @@ export class Sphere extends HObj {
             shape: this.objectType,
             vertices: this.data,
             indices: this.indices,
-            normals: this.normals,
             offset: existingIndicesLength * 2,
             count: this.indices.length,
             matrix: this.getMatrix(),
@@ -381,8 +274,6 @@ export class Cube extends HObj {
     initializeData(size: number, color: number[]) {
         let vertices = []
         let indices = []
-        let normals = []
-        let verticesForNormal = []
 
         const sizeParam = size / 2;
         const color1 = color
@@ -398,33 +289,10 @@ export class Cube extends HObj {
             -sizeParam, -sizeParam, sizeParam, ...color1,
             sizeParam, -sizeParam, sizeParam, ...color1
         ];
-        verticesForNormal = [
-            sizeParam, sizeParam, -sizeParam,
-            -sizeParam, sizeParam, -sizeParam, 
-            -sizeParam, -sizeParam, -sizeParam,
-            sizeParam, -sizeParam, -sizeParam,
-            sizeParam, sizeParam, sizeParam,
-            -sizeParam, sizeParam, sizeParam,
-            -sizeParam, -sizeParam, sizeParam,
-            sizeParam, -sizeParam, sizeParam,
-        ]
-        normals = [
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-        ]
-        indices = [0, 2, 1, 0, 3, 2, 0, 7, 3, 0, 4, 7, 6, 2, 3, 6, 3, 7, 5, 1, 2, 5, 2, 6, 5, 0, 1, 5, 4, 0, 5, 6, 7, 5, 7, 4];
+        indices = [0, 1, 2, 0, 2, 3, 0, 3, 7, 0, 7, 4, 6, 2, 3, 6, 3, 7, 5, 1, 2, 5, 2, 6, 5, 1, 0, 5, 0, 4, 5, 6, 7, 5, 7, 4];
 
         this.data = vertices
         this.indices = indices
-        this.normals = normals
-        this.verticesForNormal = verticesForNormal
-        this.updateNormals()
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
@@ -438,7 +306,6 @@ export class Cube extends HObj {
             indices: this.indices,
             offset: existingIndicesLength * 2,
             count: this.indices.length,
-            normals: this.normals,
             matrix: this.getMatrix(),
             useIndices: true
         })
@@ -456,24 +323,14 @@ export class Cylinder extends HObj {
     initializeData(baseRadius: number, topRadius: number, height: number, slices: number, stacks: number, color: number[]) {
         let vertices = [];
         let indices = [];
-        let normals = [];
-        let verticesForNormal = [];
-
-        // const sizeParam = 0.5 / 2;
-        // const color1 = color
-        // const color2 = [color[0] + .2, color[1] + .1, color[2] + .2, color[3]]
-
 
         const stackHeight = height / stacks;
-
         const topColor = [...color]
         topColor[3] -= .4
         topColor[0] += .1
         topColor[1] += .1
         topColor[2] += .1
         vertices.push(0, 0, 0, ...topColor);
-        verticesForNormal.push(0, 0, 0);
-        normals.push(...color.slice(0, 3));
         for (let sliceNumber = 0; sliceNumber < slices; sliceNumber++) {
             let theta = sliceNumber * 2 * Math.PI / slices;
             let sinTheta = Math.sin(theta);
@@ -484,8 +341,6 @@ export class Cylinder extends HObj {
             let z = baseRadius * sinTheta;
 
             vertices.push(x, y, z, ...topColor);
-            verticesForNormal.push(x, y, z);
-            normals.push(...color.slice(0, 3));
 
             if (sliceNumber > 0) {
                 indices.push(0, sliceNumber, sliceNumber + 1);
@@ -507,8 +362,6 @@ export class Cylinder extends HObj {
                 let z = currentRadius * sinTheta;
 
                 vertices.push(x, y, z, ...color);
-                verticesForNormal.push(x, y, z);
-                normals.push(...color.slice(0, 3));
             }
         }
         for (let stackNumber = 0; stackNumber < stacks; stackNumber++) {
@@ -529,8 +382,6 @@ export class Cylinder extends HObj {
 
         const topCenterIndex = vertices.length / 7;
         vertices.push(0, height, 0, ...topColor);
-        verticesForNormal.push(0, height, 0)
-        normals.push(...topColor.slice(0, 3));
         for (let sliceNumber = 0; sliceNumber < slices; sliceNumber++) {
             let theta = sliceNumber * 2 * Math.PI / slices;
             let sinTheta = Math.sin(theta);
@@ -541,20 +392,15 @@ export class Cylinder extends HObj {
             let z = topRadius * sinTheta;
 
             vertices.push(x, y, z, ...topColor);
-            verticesForNormal.push(x, y, z);
-            normals.push(...color.slice(0, 3));
 
             if (sliceNumber > 0) {
-                indices.push(topCenterIndex, topCenterIndex + sliceNumber + 1, topCenterIndex + sliceNumber);
+                indices.push(topCenterIndex, topCenterIndex + sliceNumber, topCenterIndex + sliceNumber + 1);
             }
         }
-        indices.push(topCenterIndex, topCenterIndex + 1, topCenterIndex + slices);  // Close the cap
+        indices.push(topCenterIndex, topCenterIndex + slices, topCenterIndex + 1);  // Close the cap
 
         this.data = vertices
         this.indices = indices
-        this.normals = normals
-        this.verticesForNormal = verticesForNormal
-        this.updateNormals()
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
@@ -568,7 +414,6 @@ export class Cylinder extends HObj {
             vertices: this.data,
             indices: this.indices,
             count: this.indices.length,
-            normals: this.normals,
             matrix: this.getMatrix(),
             useIndices: true
         })
