@@ -12,7 +12,7 @@
   1. <code>git clone https://github.com/RyanQ96/CSE5542-RTRendering.git</code>
   2. <code>npm install</code> (make sure npm is installed on your local machine)
   3. <code>cd 5542-codebase</code>
-  4. <code>git checkout lab3</code>
+  4. <code>git checkout lab4</code>
   5. <code>npm run dev</code> 
 * Run from the ZIP (might have environment configuration issue) 
   1. <code>npm run dev</code>
