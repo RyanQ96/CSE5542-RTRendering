@@ -399,11 +399,6 @@ export async function init(canvasEl: HTMLCanvasElement, reInit = true) {
             drawScene()
         }
     })
-    // setInterval(() => {
-    //     const rotateAmount = .05
-    //     towerRotateAngle.value += rotateAmount; 
-    //     rotateTargetShapeY(rotateAmount)
-    // }, 30)
 }
 
 export function clearCanvas() {
