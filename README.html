@@ -24,8 +24,8 @@
     
       <div class="crossnote markdown-preview  ">
       
-<h2 align="center">CSE5542-RTRendering Lab 3</h2>
-<p><img src="./assets/lab3.png" alt="image"></p>
+<h2 align="center">CSE5542-RTRendering Lab 4</h2>
+<p><img src="./assets/lab4.png" alt="image"></p>
 <h3 id="content">Content </h3>
 <ul>
 <li>
@@ -33,6 +33,9 @@
 </li>
 <li>
 <p>Codebase: <a href="https://github.com/RyanQ96/CSE5542-RTRendering">https://github.com/RyanQ96/CSE5542-RTRendering</a></p>
+</li>
+<li>
+<p>Additional Object invited from <a href="https://webglfundamentals.org/webgl/resources/models/windmill/windmill.obj"> here!</a></p>
 </li>
 <li>
 <p>Framework References:</p>
@@ -47,7 +50,7 @@
 <li><code>git clone <a href="https://github.com/RyanQ96/CSE5542-RTRendering.git">https://github.com/RyanQ96/CSE5542-RTRendering.git</a></code></li>
 <li><code>npm install</code> (make sure npm is installed on your local machine)</li>
 <li><code>cd 5542-codebase</code></li>
-<li><code>git checkout lab3</code></li>
+<li><code>git checkout lab4</code></li>
 <li><code>npm run dev</code></li>
 </ol>
 </li>
@@ -68,12 +71,14 @@
 <li><code>shaderUtils.ts</code>: utility functions to initialize shaders</li>
 <li><a href=""><code style="color: green">matrix.ts</code>: matrix utility functions,including creating projection, translation, rotation matrix, their inverse and also matrix and vector multiplication operations.</a></li>
 <li><a href=""><code style="color: green">hierarchymodel.ts</code>: hierarchical model, including <code>HObj</code>class, its children class <code>Global</code> and each one of the shapes <code>Sphere</code>, <code>Cylinder</code>, <code>Cube</code> el al.</a></li>
+<li><a href=""><code style="color: green">obj.ts</code>: class extends HObj, hierarchical model, including <code>OBJGeneral</code>class, its a generic class for <code>.obj</code> object and support rendering vertex shader, fragment shader and also texture.</a></li>
+<li><a href=""><code style="color: green">objUtils.ts</code> Utility functions for parsing OBJ files. Borrowed from https://webglfundamentals.org/webgl/webgl-load-obj-w-mtl-w-normal-maps.html.</a></li>
 </ul>
 </li>
 <li><code>core</code>: core code for eventhander and webgl rendering
 <ul>
-<li><code>setup-lab3.ts</code>: setup event listener</li>
-<li><code>drawwebgl-new.ts</code>: main rendering code</li>
+<li><code>setup-lab4.ts</code>: setup event listener</li>
+<li><code>drawwebgl-new.ts</code>: main rendering code, function <code>initShape</code> is the function that create all the shapes (table, cube, sphere, album and the invited new obj) and vertical node.</li>
 </ul>
 </li>
 </ul>
