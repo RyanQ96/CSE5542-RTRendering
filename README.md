@@ -1,6 +1,6 @@
-<h2 align="center">CSE5542-RTRendering Lab 3</h2>
+<h2 align="center">CSE5542-RTRendering Lab 4</h2>
 
-![image](./assets/lab3.png)
+![image](./assets/lab4.png)
 ### Content
 * Quick preview (deployed version): <a href="https://ryanq96.github.io/CSE5542-RTRendering/">URL</a>
 * Codebase: https://github.com/RyanQ96/CSE5542-RTRendering
