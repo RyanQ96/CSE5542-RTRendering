@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import { bindCameraMouseControlEvent, bindKeyDownEvent } from "@/core/setup-lab3";
+import { bindCameraMouseControlEvent, bindKeyDownEvent } from "@/core/setup-lab4";
 import { init } from "@/core/drawwebgl-new";
 const props = defineProps({
     width: {
@@ -54,4 +54,4 @@ watch(() => props.width + props.height, () => {
     position: absolute;
     transform: translate(-50%, -50%);
 }
-</style>@/core/setup-lab3
+</style>

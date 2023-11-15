@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue"
-import { selectedShape, selectedColor } from "@/core/setup-lab3"
+import { selectedShape, selectedColor } from "@/core/setup-lab4"
 
 // const iconShape = computed(() => {
 //     return shapeIconMapping[selectedShape.value]
@@ -32,4 +32,4 @@ watch(() => selectedShape.value + selectedColor.value, () => {
     transition-property: border;
     transition-duration: 0.5s;
 }
-</style>
+</style>@/core/setup-lab4

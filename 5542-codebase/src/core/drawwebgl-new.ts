@@ -2,8 +2,8 @@ declare var mat4: any
 
 import { initFragmentShader, initVertexShader, createAttributeSetters, createUniformSetters } from "@/utils/webglUtils";
 import { matmul, getInverseProjectionMatrix, getPerspectiveProjectionMatrix, getInverseRotateMatrix, getInverseScaleMatrix, matv, getViewMatrix } from "@/utils/matrix"
-import type { TAllowedShape, TAllowedColor } from "./setup-lab3"
-import { selectedShape, globalMode, colorMapping } from "./setup-lab3"
+import type { TAllowedShape, TAllowedColor } from "./setup-lab4"
+import { selectedShape, globalMode, colorMapping } from "./setup-lab4"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
 import { globalInstance, HObj, Cylinder, Cube, Sphere, Global } from "@/utils/hierarchymodel"
 import { createOBJ } from "@/utils/obj";
