@@ -17,7 +17,7 @@
 * Run from the ZIP (might have environment configuration issue) 
   1. <code>npm run dev</code>
 
-* Repository Walkthrough 
+* Repository Walkthrough
   * <code>5542-codebase/src/</code> 
     * <code>components</code>: vue component for the interface, including appbar and the main view (canvas) of the interface 
     * <code>utils</code>: utility methods generally used in initialize webgl program 

@@ -1,9 +1,9 @@
 import { ref } from "vue";
-import { changeLightPosX, changeLightPosY, changeLightPosZ, zoomInOutCamera, angle_x, angle_y, changeYaw, changePitch, changeRoll, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
+import { zoomInOutCamera, angle_x, angle_y, changeYaw, changePitch, changeRoll, changeCameraRedraw, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
 import { globalInstance } from "@/utils/hierarchymodel";
 
 
-export type TAllowedShape = "point" | "horizontal-line" | "vertical-line" | "circle" | "square" | "triangle" | "cylinder" | "obj-general" | "environment"
+export type TAllowedShape = "point" | "horizontal-line" | "vertical-line" | "circle" | "square" | "triangle" | "cylinder"
 export type TAllowedColor = "red" | "green" | "blue"
 
 export const mouseRelativeX = ref(0);
@@ -123,29 +123,7 @@ export function bindKeyDownEvent() {
             case "r":
                 changeRoll(-changeAmount)
                 break;
-            case "ArrowUp":
-                changeLightPosY(.1);
-                break;
 
-            case "ArrowDown":
-                changeLightPosY(-.1);
-                break;
-
-            case "ArrowLeft":
-                changeLightPosX(-.1);
-                break;
-
-            case "ArrowRight":
-                changeLightPosX(.1);
-                break; 
-
-            case "z": 
-                changeLightPosZ(-.1);
-                break; 
-
-            case "x": 
-                changeLightPosZ(.1);
-                break; 
             // case "p":
             //     selectedShape.value = "point";
             //     setShapeObjectsFromGlobal("point")
@@ -207,18 +185,18 @@ export function bindKeyDownEvent() {
 
 
 export function bindCameraMouseControlEvent() {
-
+    
     document.addEventListener('mousedown', onDocumentMouseDown, false);
 
-    function zoomCameraDistance(delta_Y: number) {
+    function zoomCameraDistance(delta_Y:number) {
         // Do something with the scroll position
         zoomInOutCamera(delta_Y);
     }
 
-    document.addEventListener("wheel", (event: WheelEvent) => {
+    document.addEventListener("wheel", (event:  WheelEvent) => {
 
-        zoomCameraDistance(event.deltaY * 0.00005);
-
+        zoomCameraDistance(event.deltaY*0.005);
+        
     });
 
 }
@@ -259,7 +237,7 @@ function onDocumentMouseMove(event: MouseEvent) {
     lastMouseX.value = mouseX;
     lastMouseY.value = mouseY;
 
-    // changeCameraRedraw();
+    changeCameraRedraw();
 }
 
 function onDocumentMouseUp() {

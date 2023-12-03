@@ -372,7 +372,6 @@ export function setUniforms(setters, ...values) {
 		Object.keys(uniforms).forEach(function (name) {
 			const setter = setters[name];
 			if (setter) {
-				console.log(name)
 				setter(uniforms[name]);
 			}
 		});

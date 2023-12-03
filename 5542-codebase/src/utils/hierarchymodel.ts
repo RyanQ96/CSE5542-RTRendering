@@ -23,12 +23,14 @@ export class HObj {
     public selectedColor = [1, 0, 0, 1]
     public radius = 40
     private _dirty = true
-    constructor(centerPoint: number[] = [0, 0, 0], parent: HObj | null = null) {
+    public useReflection: boolean = false
+    constructor(centerPoint: number[] = [0, 0, 0], parent: HObj | null = null, useReflection: boolean = false) {
         this.parent = parent
         if (this.parent) {
             this.parent.children.push(this)
         }
         this.centerPoint = centerPoint
+        this.useReflection = useReflection
     }
 
     translate(centerPoint: number[]) {
@@ -164,7 +166,6 @@ export class HObj {
             const surfaceNormals = computeSurfaceNormals(this.verticesForNormal, this.indices);
             const vertexNormals = computeVertexNormals(this.verticesForNormal, this.indices, surfaceNormals);
             this.normals = Array.from(vertexNormals)
-            console.log(vertexNormals)
         } else {
             alert("no indices or data for: " + this.objectType)
         }
@@ -298,8 +299,8 @@ export class Global extends HObj {
 
 export class Sphere extends HObj {
     public objectType: string = "sphere"
-    constructor(radius: number, slices: number, stacks: number, color: number[], parent: HObj | null = null) {
-        super([0, 0, 0], parent || globalInstance)
+    constructor(radius: number, slices: number, stacks: number, color: number[], parent: HObj | null = null, useReflection: boolean = false) {
+        super([0, 0, 0], parent || globalInstance, useReflection)
         this.initializeData(radius, slices, stacks, color,)
     }
     initializeData(radius: number, slices: number, stacks: number, color: number[],) {
@@ -364,7 +365,8 @@ export class Sphere extends HObj {
             offset: existingIndicesLength * 2,
             count: this.indices.length,
             matrix: this.getMatrix(),
-            useIndices: true
+            useIndices: true, 
+            useReflection: this.useReflection
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
     }
@@ -373,8 +375,14 @@ export class Sphere extends HObj {
 
 export class Cube extends HObj {
     public objectType: string = "cube"
-    constructor(size: number, color: number[], parent: HObj | null = null) {
-        super([0, 0, 0], parent || globalInstance)
+    public material = {
+        ambient_coef: [0.4, .4, 0.4, 1],
+        diffuse_coef: [1, 1, 1, 1],
+        specular_coef: [1, 1, 1, 1],
+        mat_shine: 10,
+    }
+    constructor(size: number, color: number[], parent: HObj | null = null, useReflection: boolean = false) {
+        super([0, 0, 0], parent || globalInstance, useReflection)
         this.initializeData(size, color)
     }
 
@@ -386,7 +394,7 @@ export class Cube extends HObj {
 
         const sizeParam = size / 2;
         const color1 = color
-        const color2 = [color[0] + .2, color[1] + .1, color[2] + .2, color[3]]
+        const color2 = color
 
         vertices = [
             sizeParam, sizeParam, -sizeParam, ...color1,
@@ -440,7 +448,9 @@ export class Cube extends HObj {
             count: this.indices.length,
             normals: this.normals,
             matrix: this.getMatrix(),
-            useIndices: true
+            useIndices: true,
+            material: this.material || {}, 
+            useReflection: this.useReflection
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
     }
@@ -448,9 +458,15 @@ export class Cube extends HObj {
 
 export class Cylinder extends HObj {
     public objectType: string = "cylinder"
-    constructor(baseRadius: number, topRadius: number, height: number, slices: number, stacks: number, color: number[], parent: HObj | null = null) {
-        super([0, 0, 0], parent || globalInstance)
+    constructor(baseRadius: number, topRadius: number, height: number, slices: number, stacks: number, color: number[], parent: HObj | null = null, useReflection: boolean = false) {
+        super([0, 0, 0], parent || globalInstance, useReflection)
         this.initializeData(baseRadius, topRadius, height, slices, stacks, color)
+    }
+    public material = {
+        ambient_coef: [0.4, 0.4, 0.4, 1],
+        diffuse_coef: [1, 1, 1, 1],
+        specular_coef: [.03, .03, .03, 1],
+        mat_shine: 1,
     }
 
     initializeData(baseRadius: number, topRadius: number, height: number, slices: number, stacks: number, color: number[]) {
@@ -458,11 +474,6 @@ export class Cylinder extends HObj {
         let indices = [];
         let normals = [];
         let verticesForNormal = [];
-
-        // const sizeParam = 0.5 / 2;
-        // const color1 = color
-        // const color2 = [color[0] + .2, color[1] + .1, color[2] + .2, color[3]]
-
 
         const stackHeight = height / stacks;
 
@@ -570,7 +581,9 @@ export class Cylinder extends HObj {
             count: this.indices.length,
             normals: this.normals,
             matrix: this.getMatrix(),
-            useIndices: true
+            useIndices: true,
+            material: this.material || {},
+            useReflection: this.useReflection
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
     }
