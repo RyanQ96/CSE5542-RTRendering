@@ -131,7 +131,7 @@ export function toggleCameraFreeMode() {
 
 export function zoomInOutCamera(amount: number) {
     cameraDistance.value += amount
-    drawScene()
+    // drawScene()
 }
 
 
