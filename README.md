@@ -1,6 +1,6 @@
-<h2 align="center">CSE5542-RTRendering Lab 4</h2>
+<h2 align="center">CSE5542-RTRendering Lab 5</h2>
 
-![image](./assets/lab4.png)
+![image](./assets/lab5.png)
 ### Content
 * Quick preview (deployed version): <a href="https://ryanq96.github.io/CSE5542-RTRendering/">URL</a>
 * Codebase: https://github.com/RyanQ96/CSE5542-RTRendering
@@ -19,6 +19,7 @@
 
 * Repository Walkthrough
   * <code>5542-codebase/src/</code> 
+    * <code>shaders</code>: shader code for environemnt cube mapping and general objects
     * <code>components</code>: vue component for the interface, including appbar and the main view (canvas) of the interface 
     * <code>utils</code>: utility methods generally used in initialize webgl program 
       * <code>shaderUtils.ts</code>: utility functions to initialize shaders
