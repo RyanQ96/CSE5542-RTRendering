@@ -28,7 +28,6 @@ function toggleFreeMode() {
 
 onMounted(() => {
     resizeObserver.observe(container.value!);
-    console.log(document.querySelector(".canvas-container"))
     width.value = container.value!.clientWidth;
     height.value = container.value!.clientHeight;
     console.log(width.value, height.value)

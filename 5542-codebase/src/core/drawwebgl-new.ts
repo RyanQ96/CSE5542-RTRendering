@@ -5,20 +5,20 @@ import { matmul, getInverseProjectionMatrix, getPerspectiveProjectionMatrix, get
 import type { TAllowedShape, TAllowedColor } from "./setup-lab4"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab4"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
-import { globalInstance, HObj, Cylinder, Cube, Sphere } from "@/utils/hierarchymodel"
+import { globalInstance, HObj, Cylinder, Cube, Sphere, Global } from "@/utils/hierarchymodel"
 import { createOBJ, createEnvironObj } from "@/utils/obj";
 import { ref, watch } from "vue";
 import { setUniforms } from "@/utils/objUtils"
 import { coreVertexShader, coreFragmentShader, envFragmentShader, envVertexShader } from "@/shaders"
 
 
-
+Global; watch; 
 export let angle_x = ref(-0.0579); // in degrees
-export let angle_y = ref(0.25099); // in degrees 
+export let angle_y = ref(-0.25099); // in degrees 
 
 let targetShapeOfMove: HObj | null = null
 
-const cameraDistance = ref(-.4);
+const cameraDistance = ref(.5);
 
 export let cameraFreeMode = ref(true)
 
@@ -131,6 +131,7 @@ export function toggleCameraFreeMode() {
 
 export function zoomInOutCamera(amount: number) {
     cameraDistance.value += amount
+    cameraDistance.value = Math.max(0.1, cameraDistance.value)
     // drawScene()
 }
 
@@ -243,7 +244,7 @@ export function changeCameraRedraw() {
 
 
 export function addShape(centerPoint: number[], shape: TAllowedShape, color: number[]) {
-    console.log("logging: addShape", centerPoint, shape, color)
+    console.log("addShape", centerPoint, shape, color)
     const mappedCenterPoint = htmlCoordToWebglCoord(centerPoint, [canvas.width, canvas.height], canvasSpaceLayout)
     globalInstance.objectOfInterest?.translate(mappedCenterPoint)
     drawScene()
@@ -266,20 +267,20 @@ export async function init(canvasEl: HTMLCanvasElement, reInit = true) {
     if (reInit) await initShape()
     const { vertexShaderObject: envVertexShaderObject, fragmentShaderObject: envFragmentShaderObject } = initShader(envVertexShader, envFragmentShader)
     envProgramContext = initProgram(envVertexShaderObject, envFragmentShaderObject)
-    console.log("envProgramContext: ", envProgramContext)
 
     const { vertexShaderObject, fragmentShaderObject } = initShader()
     programContext = initProgram(vertexShaderObject, fragmentShaderObject)
     initBuffers()
 
-    
+
     await initEvn()
 
-    watch(numOfTexturesRegistered, (newVal) => {
-        if (newVal === 0) {
-            drawScene()
-        }
-    })    
+    // watch(numOfTexturesRegistered, (newVal) => {
+    //     if (newVal === 0) {
+    //         drawScene()
+    //     }
+    // })
+    drawScene()
 }
 
 
@@ -343,7 +344,6 @@ function initWebGL() {
 function resizeCanvasToMatchDisplaySize(canvas: HTMLCanvasElement) {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    console.log(canvas.clientWidth, canvas.clientHeight)
     webgl.viewport(0, 0, canvas.width, canvas.height);
 }
 
@@ -354,8 +354,8 @@ async function initShape() {
     // lightBulbObj = lightBulb
 
 
-    // const sphereS = new Sphere(0.05, 30, 30, [1, 0, 0, 1],);
-    // sphereS.translateDelta([-0.59, -0.25 + 0.05, 0])
+    // const cubeA = new Cube(0.03, [0.1, 0.4, .2, .2], globalInstance, true);
+    // const sphereSS = new Sphere(0.05, 30, 30, [1, 0, 0, 1], globalInstance, true);
 
     const bot = new Cylinder(0.04, 0.04, 0.005, 60, 100, [0.89, 0.6941, 0.5725, 1],);
     bot.translateDelta([0, -.1, 0])
@@ -363,7 +363,7 @@ async function initShape() {
     const feet = new Cylinder(0.005, 0.005, .12, 60, 100, [0.89, 0.6941, 0.5725, 1], bot);
     feet.translateDelta([0, 0.005, 0])
 
-    const tableSurface = new Cylinder(0.15, .15, 0.007, 60, 100, [0.89, 0.6941, 0.5725, 1], feet);
+    const tableSurface = new Cylinder(0.15, .15, 0.007, 60, 100, [0.89, 0.6941, 0.5725, 1], feet, false);
     tableSurface.translateDelta([0, .12, 0])
 
     const sphere = new Sphere(0.02, 30, 30, [1, 0, 0, 1], tableSurface, true);
@@ -389,34 +389,34 @@ async function initShape() {
 
 
     // const virtualAlbum = new Global([0, 0, 0], tableSurface);
-    // virtualAlbum.translateDelta([0.2, 0, 0])
+    // virtualAlbum.translateDelta([0.02, 0.02 + 0.007, 0])
     // virtualAlbum.rotateY(.01)
 
 
-    // const ablumfeet = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet.translateDelta([0, 0.07 + 0.2, 1])
+    // const ablumfeet = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    // ablumfeet.translateDelta([0, 0, .1])
     // ablumfeet.scale(.15, 1.7, .15)
     // ablumfeet.rotateX(.5)
 
 
-    // const ablumfeet2 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet2.translateDelta([0.4, 0.07 + 0.2, 1])
+    // const ablumfeet2 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    // ablumfeet2.translateDelta([0.04, 0, .1])
     // ablumfeet2.scale(.15, 1.7, .15)
     // ablumfeet2.rotateX(.5)
 
 
-    // const ablumfeet3 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet3.translateDelta([0.2, 0.08, 1.1])
+    // const ablumfeet3 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    // ablumfeet3.translateDelta([0.02, -0.016, .11])
     // ablumfeet3.scale(1.2, .15, .15)
 
 
-    // const ablumfeet4 = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet4.translateDelta([0.2, 0.467, 0.895])
+    // const ablumfeet4 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    // ablumfeet4.translateDelta([0.02, 0.02, 0.0895])
     // ablumfeet4.scale(1.2, .15, .15)
 
 
-    // const ablumBackground = new Cube(0.3, [1, 1, 1, .2], virtualAlbum);
-    // ablumBackground.translateDelta([0.2, 0.28, 1.0])
+    // const ablumBackground = new Cube(0.03, [1, 1, 1, .2], virtualAlbum);
+    // ablumBackground.translateDelta([0.02, 0.0011, 0.097])
     // ablumBackground.scale(1.2, 1.5, .02)
     // ablumBackground.rotateX(.5)
 
@@ -426,11 +426,12 @@ async function initShape() {
     // ablumbackfeet.scale(0.3, 0.98, .08)
     // ablumbackfeet.rotateX(-.3)
 
+
     const towerHref = "https://webglfundamentals.org/webgl/resources/models/windmill/windmill.obj"
     const obj = await createOBJ(webgl, towerHref, tableSurface, registerTexture, finishTexture)
     obj.scale(0.01, 0.01, 0.01)
     obj.translateDelta([-0.08, 0.007, 0.07])
-    // obj.rotateY(1)
+    obj.rotateY(1)
 
 
 
@@ -491,48 +492,35 @@ export function setShapeObjectsFromGlobal(shape: TAllowedShape) {
 
 
 export function drawScene() {
-    console.log("cameraDistance", cameraDistance.value)
+    // console.log("cameraDistance", cameraDistance.value)
     const { drawingCommands } = globalInstance.render()
-    console.log(drawingCommands)
     // updateDataBuffers(drawingData)
 
 
-    const uProjectMat = webgl.getUniformLocation(programObject, "ProjectMat");
-    // const ProjectMat = getFrustumProjectionMatrix(canvasSpaceLayout);
     ProjectMat = getPerspectiveProjectionMatrix(canvas);
-    // console.log(ProjectMat)
-    webgl.uniformMatrix4fv(uProjectMat, false, ProjectMat);
-    // console.log(ProjectMat)
 
-    let eye = [0, 1, 4];  // Adjust this as needed
+    let eye;// Adjust this as needed
     const center = [0, 0, 0];
     const up = [0, 1, 0];
 
     let viewMatrix: Float32Array | null = null;
     if (cameraFreeMode.value) {
-        let ex = Math.sin(angle_x.value) * cameraDistance.value;
-        let ez = Math.cos(angle_x.value) * cameraDistance.value;
+        let ex = Math.cos(angle_x.value) * Math.cos(angle_y.value) * cameraDistance.value;
+        let ez = Math.sin(angle_x.value) * Math.cos(angle_y.value) * cameraDistance.value;
         let ey = Math.sin(angle_y.value) * cameraDistance.value;
-        let dist = Math.sqrt(ex * ex + ey * ey + ez * ez);
-        ex = (ex / dist) * cameraDistance.value;
-        ey = (ey / dist) * cameraDistance.value;
-        ez = (ez / dist) * cameraDistance.value;
-
         eye = [ex, ey, ez];
-        console.log("eye", eye)
         viewMatrix = mat4.lookAt(mat4.create(), eye, center, up);
     } else {
         viewMatrix = getViewMatrix(yaw.value, pitch.value, roll.value, eye);
     }
 
 
-    const uViewMat = webgl.getUniformLocation(programObject, "viewMatrix");
-    webgl.uniformMatrix4fv(uViewMat, false, viewMatrix as any);
+    // const uViewMat = webgl.getUniformLocation(programObject, "viewMatrix");
+    // webgl.uniformMatrix4fv(uViewMat, false, viewMatrix as any);
 
     webgl.clearColor(0.9, 0.9, 0.9, 1);
     webgl.clear(webgl.COLOR_BUFFER_BIT);
-    
-    drawingCommands.forEach((command: drawCommand) => { 
+    drawingCommands.forEach((command: drawCommand) => {
         let normalMatrix = mat4.create();
         mat4.identity(normalMatrix);
         mat4.multiply(normalMatrix, normalMatrix, viewMatrix);
@@ -540,15 +528,23 @@ export function drawScene() {
         normalMatrix = mat4.inverse(normalMatrix);
         mat4.transpose(normalMatrix, normalMatrix);
         if (command.shape === "environment") {
+            let viewDirectionMatrix = mat4.create();
+            mat4.identity(viewDirectionMatrix); 
+            viewDirectionMatrix = mat4.copy(viewDirectionMatrix, viewMatrix);
+            viewDirectionMatrix[12] = 0;
+            viewDirectionMatrix[13] = 0;
+            viewDirectionMatrix[14] = 0;
+
             let viewDirectionProjectionInverseMatrix = mat4.create();
             mat4.identity(viewDirectionProjectionInverseMatrix);
-            mat4.multiply(viewDirectionProjectionInverseMatrix, ProjectMat, viewMatrix);
+            mat4.multiply(viewDirectionProjectionInverseMatrix, ProjectMat, viewDirectionMatrix);
             viewDirectionProjectionInverseMatrix = mat4.inverse(viewDirectionProjectionInverseMatrix);
             command.commandFunc(webgl, envProgramContext, {
                 u_viewDirectionProjectionInverse: viewDirectionProjectionInverseMatrix,
-                u_texture: envTexture, 
+                u_texture: envTexture,
             })
         } else if (command.shape === "obj-general") {
+            webgl.depthFunc(webgl.LESS);
             command.commandFunc(webgl, programContext, {
                 ProjectMat,
                 viewMatrix,
@@ -562,10 +558,11 @@ export function drawScene() {
                 diffuse_coef: mat_diffuse,
                 specular_coef: mat_specular,
                 mat_shininess: mat_shine[0],
-                useReflection: command.useReflection?1:0,
-                u_texture: envTexture, 
+                u_texture: envTexture,
+                TransformMat: command.matrix,
             })
         } else {
+            webgl.depthFunc(webgl.LESS);
             webgl.useProgram(programContext.program)
             updateDataBuffers(command.vertices)
             // webgl.pixelStorei(webgl.UNPACK_FLIP_Y_WEBGL, false);
@@ -573,7 +570,6 @@ export function drawScene() {
             const normalBuffer = webgl.createBuffer();
             webgl.bindBuffer(webgl.ARRAY_BUFFER, normalBuffer);
             webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(command.normals), webgl.STATIC_DRAW);
-
             webgl.bindBuffer(webgl.ARRAY_BUFFER, normalBuffer);
             webgl.enableVertexAttribArray(a_normal);
             webgl.vertexAttribPointer(a_normal, 3, webgl.FLOAT, false, 0, 0);
@@ -597,9 +593,11 @@ export function drawScene() {
             webgl.uniformMatrix4fv(uNormalMatrix, false, normalMatrix);
             const uUseTexture = webgl.getUniformLocation(programObject, "useTexture");
             webgl.uniform1i(uUseTexture, 0);
-            const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
+            // const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
 
             setUniforms(programContext, {
+                ProjectMat,
+                viewMatrix,
                 eye_pos: eye,
                 light_ambient,
                 light_diffuse,
@@ -609,11 +607,12 @@ export function drawScene() {
                 diffuse_coef: mat_diffuse,
                 specular_coef: mat_specular,
                 mat_shininess: mat_shine[0],
-                useReflection: command.useReflection?1:0,
-                u_texture: envTexture, 
+                useReflection: command.useReflection ? 1 : 0,
+                u_texture: envTexture,
+                TransformMat: command.matrix, 
                 ...(command.material || {})
             })
-            webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
+            // webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
             webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
         }
     })

@@ -1,5 +1,5 @@
 import { HObj, globalInstance } from "./hierarchymodel"
-import { parseOBJ, parseMTL, createTexture, create1PixelTexture, generateTangents, setBuffersAndAttributes, setUniforms, computeSurfaceNormals, computeVertexNormals } from "./objUtils"
+import { parseOBJ, parseMTL, createTexture, create1PixelTexture, generateTangents, setBuffersAndAttributes, setUniforms, computeSurfaceNormals, computeVertexNormals, requestCORSIfNotSameOrigin } from "./objUtils"
 import { createBufferInfoFromArrays, drawBufferInfo } from "./webglUtils"
 // import { subtractVector, scaleVector, addVector } from "./matrix";
 import type { programContext } from "@/core/drawwebgl-new"
@@ -25,15 +25,14 @@ export class OBJGeneral extends HObj {
                 // const uUseTexture = gl.getUniformLocation(programContext.program, "useTexture");
                 // gl.uniform1i(uUseTexture, 1);
                 gl.useProgram(programContext.program);
-                for (const { bufferInfo, material } of dataParts) {
-
+                for (const { bufferInfo, material } of dataParts) {                    
                     // calls gl.bindBuffer, gl.enableVertexAttribArray, gl.vertexAttribPointer
                     setBuffersAndAttributes(gl, programContext, bufferInfo);
                     // calls gl.uniform
                     setUniforms(programContext, {
+                        useReflection: this.useReflection || (bufferInfo.numElements < 2000) ? 1 : 0,
                         TransformMat: this.getMatrix(),
                         useTexture: 1,
-                        useReflection: this.useReflection ? 1 : 0,
                         ...sharedMatrix,
                     }, material);
                     drawBufferInfo(gl, bufferInfo);
@@ -69,8 +68,8 @@ export class EnvObj extends HObj {
                 // gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.skybox);
                 // gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
                 // gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
                 gl.depthFunc(gl.LEQUAL);
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
                 gl.useProgram(programContext.program || this.programContext.program);
                 setBuffersAndAttributes(gl, programContext, this.data);
                 setUniforms(programContext, {
@@ -123,7 +122,7 @@ export async function createEnvironObj(gl: WebGLRenderingContext, programContext
 
         // Asynchronously load an image
         const image = new Image();
-        // requestCORSIfNotSameOrigin(image, url)
+        requestCORSIfNotSameOrigin(image, url)
         image.src = url;
         image.addEventListener('load', function () {
             // Now that the image has loaded make copy it to the texture.

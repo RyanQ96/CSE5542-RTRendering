@@ -217,7 +217,7 @@ export function bindCameraMouseControlEvent() {
 
     document.addEventListener("wheel", (event: WheelEvent) => {
 
-        zoomCameraDistance(event.deltaY * 0.00005);
+        zoomCameraDistance(event.deltaY * 0.0005);
 
     });
 
@@ -240,7 +240,7 @@ function onDocumentMouseMove(event: MouseEvent) {
     var mouseY = event.clientY;
 
     const ratio = .004;
-    var deltaX = -(mouseX - lastMouseX.value) * ratio;
+    var deltaX = (mouseX - lastMouseX.value) * ratio;
     var deltaY = (mouseY - lastMouseY.value) * ratio;
     var x_limit = 180 * 0.17453292519943295;
     var y_limit = 60 * 0.17453292519943295;

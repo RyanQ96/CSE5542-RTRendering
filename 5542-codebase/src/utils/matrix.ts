@@ -33,7 +33,7 @@ export function getPerspectiveProjectionMatrix(canvas: HTMLCanvasElement) {
     const height = canvas.clientHeight;
     const aspect = width / height;
 
-    return mat4.perspective(mat4.create(), Math.PI / 3, aspect, 0.1, 100.0)
+    return mat4.perspective(mat4.create(), Math.PI / 3, aspect, .1, 100.0)
 }
 
 export function getFrustumProjectionMatrix(layout: TCoordSpaceLayout) {

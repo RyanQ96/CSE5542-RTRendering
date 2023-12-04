@@ -8,7 +8,7 @@ export class HObj {
     public rotateTotal: number = 0
     public rotateYTotal: number = 0
     public rotateXTotal: number = 0
-    public verticesForNormal: number[]; 
+    public verticesForNormal: number[];
     public parts: any;
     public normals: number[];
     public translationMat: Float32Array = getIdentifyMatrix()
@@ -181,7 +181,6 @@ export class Global extends HObj {
     public objectOfInterest: HObj | null = null
     public candidateObjectOfInterest: HObj | null = null
     constructor(centerPoint: number[] = [0, 0, 0], parent: HObj | null = null) {
-        console.log("!!!!!")
         super(centerPoint, parent)
     }
     render(dataContainer: number[] | null = null, commandContainer: any[] | null = null, indicesDataContainer: any[] | null = null) {
@@ -365,7 +364,7 @@ export class Sphere extends HObj {
             offset: existingIndicesLength * 2,
             count: this.indices.length,
             matrix: this.getMatrix(),
-            useIndices: true, 
+            useIndices: true,
             useReflection: this.useReflection
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
@@ -387,52 +386,129 @@ export class Cube extends HObj {
     }
 
     initializeData(size: number, color: number[]) {
-        let vertices = []
-        let indices = []
-        let normals = []
-        let verticesForNormal = []
-
-        const sizeParam = size / 2;
-        const color1 = color
-        const color2 = color
-
-        vertices = [
-            sizeParam, sizeParam, -sizeParam, ...color1,
-            -sizeParam, sizeParam, -sizeParam, ...color1,
-            -sizeParam, -sizeParam, -sizeParam, ...color1,
-            sizeParam, -sizeParam, -sizeParam, ...color2,
-            sizeParam, sizeParam, sizeParam, ...color2,
-            -sizeParam, sizeParam, sizeParam, ...color2,
-            -sizeParam, -sizeParam, sizeParam, ...color1,
-            sizeParam, -sizeParam, sizeParam, ...color1
+        const CUBE_FACE_INDICES = [
+            [3, 7, 5, 1], // right
+            [6, 2, 0, 4], // left
+            [6, 7, 3, 2], // ??
+            [0, 1, 5, 4], // ??
+            [7, 6, 4, 5], // front
+            [2, 3, 1, 0], // back
         ];
-        verticesForNormal = [
-            sizeParam, sizeParam, -sizeParam,
-            -sizeParam, sizeParam, -sizeParam, 
-            -sizeParam, -sizeParam, -sizeParam,
-            sizeParam, -sizeParam, -sizeParam,
-            sizeParam, sizeParam, sizeParam,
-            -sizeParam, sizeParam, sizeParam,
-            -sizeParam, -sizeParam, sizeParam,
-            sizeParam, -sizeParam, sizeParam,
-        ]
-        normals = [
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-            ...color1.slice(0, 3),
-        ]
-        indices = [0, 2, 1, 0, 3, 2, 0, 7, 3, 0, 4, 7, 6, 2, 3, 6, 3, 7, 5, 1, 2, 5, 2, 6, 5, 0, 1, 5, 4, 0, 5, 6, 7, 5, 7, 4];
+        function createCubeVertices(size) {
+            const k = size / 2;
 
-        this.data = vertices
+            const cornerVertices = [
+                [-k, -k, -k, ...color],
+                [+k, -k, -k, ...color],
+                [-k, +k, -k, ...color],
+                [+k, +k, -k, ...color],
+                [-k, -k, +k, ...color],
+                [+k, -k, +k, ...color],
+                [-k, +k, +k, ...color],
+                [+k, +k, +k, ...color],
+            ];
+
+            const faceNormals = [
+                [+1, +0, +0],
+                [-1, +0, +0],
+                [+0, +1, +0],
+                [+0, -1, +0],
+                [+0, +0, +1],
+                [+0, +0, -1],
+            ];
+
+            const uvCoords = [
+                [1, 0],
+                [0, 0],
+                [0, 1],
+                [1, 1],
+            ];
+
+            // const numVertices = 6 * 4;
+            const positions = []
+            const normals = []
+            const texCoords = []
+            const indices = []
+
+            for (let f = 0; f < 6; ++f) {
+                const faceIndices = CUBE_FACE_INDICES[f];
+                for (let v = 0; v < 4; ++v) {
+                    const position = cornerVertices[faceIndices[v]];
+                    const normal = faceNormals[f];
+                    const uv = uvCoords[v];
+
+                    // Each face needs all four vertices because the normals and texture
+                    // coordinates are not all the same.
+                    positions.push(position);
+                    normals.push(normal);
+                    texCoords.push(uv);
+
+                }
+                // Two triangles make a square face.
+                const offset = 4 * f;
+                indices.push(offset + 0, offset + 1, offset + 2);
+                indices.push(offset + 0, offset + 2, offset + 3);
+            }
+
+            return {
+                position: positions.flat(),
+                normal: normals.flat(),
+                texcoord: texCoords.flat(),
+                indices: indices.flat(),
+            };
+        }
+        const {position, normal, indices} = createCubeVertices(size)
+        this.data = position
         this.indices = indices
-        this.normals = normals
-        this.verticesForNormal = verticesForNormal
-        this.updateNormals()
+        this.normals = normal
+        // this.updateNormals()
+        console.log("check norms", this.normals)
+
+        // let vertices = []
+        // let indices = []
+        // // let normals = []
+        // let verticesForNormal = []
+
+        // const sizeParam = size / 2;
+        // const color1 = color
+        // const color2 = color
+
+        // vertices = [
+        //     sizeParam, sizeParam, -sizeParam, ...color1,
+        //     -sizeParam, sizeParam, -sizeParam, ...color1,
+        //     -sizeParam, -sizeParam, -sizeParam, ...color1,
+        //     sizeParam, -sizeParam, -sizeParam, ...color2,
+        //     sizeParam, sizeParam, sizeParam, ...color2,
+        //     -sizeParam, sizeParam, sizeParam, ...color2,
+        //     -sizeParam, -sizeParam, sizeParam, ...color1,
+        //     sizeParam, -sizeParam, sizeParam, ...color1
+        // ];
+        // verticesForNormal = [
+        //     sizeParam, sizeParam, -sizeParam,
+        //     -sizeParam, sizeParam, -sizeParam,
+        //     -sizeParam, -sizeParam, -sizeParam,
+        //     sizeParam, -sizeParam, -sizeParam,
+        //     sizeParam, sizeParam, sizeParam,
+        //     -sizeParam, sizeParam, sizeParam,
+        //     -sizeParam, -sizeParam, sizeParam,
+        //     sizeParam, -sizeParam, sizeParam,
+        // ]
+
+
+        // indices = [0, 2, 1, 0, 3, 2, 0, 7, 3, 0, 4, 7, 6, 2, 3, 6, 3, 7, 5, 1, 2, 5, 2, 6, 5, 0, 1, 5, 4, 0, 5, 6, 7, 5, 7, 4];
+
+        // // const surfaceNormals = computeSurfaceNormals(this.verticesForNormal, this.indices);
+        // // const vertexNormals = computeVertexNormals(this.verticesForNormal, this.indices, surfaceNormals);
+        // // this.normals = Array.from(vertexNormals)
+
+        // // const surfaceNormals = computeSurfaceNormals(vertices, indices);
+        // // const vertexNormals = computeVertexNormals(vertices, indices, surfaceNormals);
+
+        // this.data = vertices
+        // this.indices = indices
+        // this.verticesForNormal = verticesForNormal
+        // this.updateNormals()
+        // console.log("check norms", this.normals)
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
@@ -449,7 +525,7 @@ export class Cube extends HObj {
             normals: this.normals,
             matrix: this.getMatrix(),
             useIndices: true,
-            material: this.material || {}, 
+            material: this.material || {},
             useReflection: this.useReflection
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))

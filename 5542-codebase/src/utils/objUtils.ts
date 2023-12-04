@@ -267,7 +267,7 @@ export function createTexture(gl: WebGLRenderingContext, url: string, finishText
 	return texture;
 }
 
-function requestCORSIfNotSameOrigin(img: any, url: string) {
+export function requestCORSIfNotSameOrigin(img: any, url: string) {
 	if ((new URL(url, window.location.href)).origin !== window.location.origin) {
 		img.crossOrigin = "";
 	}
@@ -383,7 +383,6 @@ function setAttributes(setters, attribs) {
 	Object.keys(attribs).forEach(function (name) {
 		const setter = setters[name];
 		if (setter) {
-			console.log(name)
 			setter(attribs[name]);
 		}
 	});

@@ -6,7 +6,6 @@ function getBindPointForSamplerType(gl: WebGLRenderingContext, type: number) {
 
 
 export function drawBufferInfo(gl, bufferInfo, primitiveType: number | null = null, count: number | null = null, offset: number | null = null) {
-    console.log(bufferInfo)
     const indices = bufferInfo.indices;
     primitiveType = primitiveType == undefined ? gl.TRIANGLES : primitiveType;
     const numElements = count == undefined ? bufferInfo.numElements : count;
@@ -14,7 +13,6 @@ export function drawBufferInfo(gl, bufferInfo, primitiveType: number | null = nu
     if (indices) {
         gl.drawElements(primitiveType, numElements, gl.UNSIGNED_SHORT, offset);
     } else {
-        console.log(numElements)
         gl.drawArrays(primitiveType, offset, numElements);
     }
 }
@@ -282,7 +280,6 @@ function getNumElementsFromNonIndexedArrays(arrays) {
 }
 
 export function createAttribsFromArrays(gl: WebGLRenderingContext, arrays: any, opt_mapping: any) {
-    console.log(arrays)
     const mapping = opt_mapping || createMapping(arrays);
     const attribs = {};
     Object.keys(mapping).forEach(function (attribName) {
