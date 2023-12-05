@@ -1,6 +1,6 @@
 <template>
-    <h1 style="position: absolute; padding-bottom: 10px; text-align: center; font-size: 2rem"><v-btn class="indicator-btn" icon="mdi-eye"
-            style="background-color: transparant; " variant="text" @click="toggleFreeMode" :color="cameraFreeMode?'green': 'black'"></v-btn></h1>
+    <h1 style="position: absolute; padding-bottom: 10px; text-align: center; font-size: 2rem"><v-btn class="indicator-btn" icon="mdi-rotate-360"
+            style="background-color: transparant; " variant="text" @click="toggleFreeMode" :color="freeRotate?'green': 'black'"></v-btn></h1>
     <div ref="container" class="canvas-container">
         <inner :width="width" :height="height" />
     </div>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import inner from './inner.vue';
 import { ref, onMounted } from "vue"
-import { toggleCameraFreeMode, cameraFreeMode } from "@/core/drawwebgl-new";
+import { toggleAutoRotateMode, freeRotate } from "@/core/drawwebgl-new";
 
 const container = ref<HTMLElement | null>(null);
 const width = ref<number>(window.innerWidth);
@@ -23,7 +23,7 @@ const resizeObserver = new ResizeObserver(entries => {
 });
 
 function toggleFreeMode() {
-    toggleCameraFreeMode()
+    toggleAutoRotateMode()
 }
 
 onMounted(() => {

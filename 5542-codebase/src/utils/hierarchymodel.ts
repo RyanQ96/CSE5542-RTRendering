@@ -1,5 +1,5 @@
 import { getIdentifyMatrix, getTransiationMatrix, getRotateMatrix, getScaleMatrix, matmul, getRotateYMatrix, getRotateXMatrix } from "@/utils/matrix"
-import { computeSurfaceNormals, computeVertexNormals } from "./objUtils"
+import { computeSurfaceNormals, computeVertexNormals, requestCORSIfNotSameOrigin } from "./objUtils"
 
 export class HObj {
     public children: HObj[] = []
@@ -71,18 +71,23 @@ export class HObj {
         globalInstance.setObjectOfInterest(this)
     }
 
-    getMatrix(): Float32Array {
+    getMatrix(additionalRotate?: number): Float32Array {
         if (this._dirty) {
             // recalculate matrix
             if (this.objectType === "Global") {
                 this.combinedMat = matmul(this.translationMat, this.rotationMat, this.scaleMat)
             } else {
                 this.combinedMat = matmul(this.translationMat, this.rotationMat, this.scaleMat)
-            }
 
+                // this.combinedMat = matmul(this.translationMat, this.rotationMat, getRotateXMatrix(additionalRotate), this.scaleMat) 
+            }
             this._dirty = false
         }
-        return this.parent ? matmul(this.parent.getMatrix(), this.combinedMat) : this.combinedMat
+        let tmpCombinedMat = this.combinedMat
+        if (additionalRotate) {
+            tmpCombinedMat = matmul(this.translationMat, this.rotationMat, this.scaleMat, getTransiationMatrix(0, 6.5, 0), getRotateXMatrix(additionalRotate), getTransiationMatrix(0, -6.5, 0))
+        }
+        return this.parent ? matmul(this.parent.getMatrix(), tmpCombinedMat) : this.combinedMat
     }
 
     render(dataContainer: number[], drawingCommands: any[], indicesData: any[]) {
@@ -374,16 +379,51 @@ export class Sphere extends HObj {
 
 export class Cube extends HObj {
     public objectType: string = "cube"
+    public texture: any
+    public texcoord: any
+
     public material = {
         ambient_coef: [0.4, .4, 0.4, 1],
         diffuse_coef: [1, 1, 1, 1],
         specular_coef: [1, 1, 1, 1],
         mat_shine: 10,
     }
-    constructor(size: number, color: number[], parent: HObj | null = null, useReflection: boolean = false) {
+    constructor(size: number, color: number[], parent: HObj | null = null, useReflection: boolean = false, textureURL?: string, gl?: WebGLRenderingContext) {
         super([0, 0, 0], parent || globalInstance, useReflection)
         this.initializeData(size, color)
+        if (textureURL) this.initializeTexture(gl, textureURL)
     }
+    initializeTexture(gl: WebGLRenderingContext, textureURL: string) {
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        // Fill the texture with a 1x1 blue pixel.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+            new Uint8Array([0, 0, 255, 255]));
+
+        // let's assume all images are not a power of 2
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        var textureInfo = {
+            width: 1,   // we don't know the size until it loads
+            height: 1,
+            texture: tex,
+        };
+        var img = new Image();
+        img.addEventListener('load', function () {
+            textureInfo.width = img.width;
+            textureInfo.height = img.height;
+
+            gl.bindTexture(gl.TEXTURE_2D, textureInfo.texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        });
+        requestCORSIfNotSameOrigin(img, textureURL);
+        img.src = textureURL;
+        this.texture = tex
+    }
+
+
 
     initializeData(size: number, color: number[]) {
         const CUBE_FACE_INDICES = [
@@ -457,58 +497,14 @@ export class Cube extends HObj {
                 indices: indices.flat(),
             };
         }
-        const {position, normal, indices} = createCubeVertices(size)
+        const { position, normal, indices, texcoord } = createCubeVertices(size)
         this.data = position
         this.indices = indices
         this.normals = normal
+        this.texcoord = texcoord
         // this.updateNormals()
         console.log("check norms", this.normals)
 
-        // let vertices = []
-        // let indices = []
-        // // let normals = []
-        // let verticesForNormal = []
-
-        // const sizeParam = size / 2;
-        // const color1 = color
-        // const color2 = color
-
-        // vertices = [
-        //     sizeParam, sizeParam, -sizeParam, ...color1,
-        //     -sizeParam, sizeParam, -sizeParam, ...color1,
-        //     -sizeParam, -sizeParam, -sizeParam, ...color1,
-        //     sizeParam, -sizeParam, -sizeParam, ...color2,
-        //     sizeParam, sizeParam, sizeParam, ...color2,
-        //     -sizeParam, sizeParam, sizeParam, ...color2,
-        //     -sizeParam, -sizeParam, sizeParam, ...color1,
-        //     sizeParam, -sizeParam, sizeParam, ...color1
-        // ];
-        // verticesForNormal = [
-        //     sizeParam, sizeParam, -sizeParam,
-        //     -sizeParam, sizeParam, -sizeParam,
-        //     -sizeParam, -sizeParam, -sizeParam,
-        //     sizeParam, -sizeParam, -sizeParam,
-        //     sizeParam, sizeParam, sizeParam,
-        //     -sizeParam, sizeParam, sizeParam,
-        //     -sizeParam, -sizeParam, sizeParam,
-        //     sizeParam, -sizeParam, sizeParam,
-        // ]
-
-
-        // indices = [0, 2, 1, 0, 3, 2, 0, 7, 3, 0, 4, 7, 6, 2, 3, 6, 3, 7, 5, 1, 2, 5, 2, 6, 5, 0, 1, 5, 4, 0, 5, 6, 7, 5, 7, 4];
-
-        // // const surfaceNormals = computeSurfaceNormals(this.verticesForNormal, this.indices);
-        // // const vertexNormals = computeVertexNormals(this.verticesForNormal, this.indices, surfaceNormals);
-        // // this.normals = Array.from(vertexNormals)
-
-        // // const surfaceNormals = computeSurfaceNormals(vertices, indices);
-        // // const vertexNormals = computeVertexNormals(vertices, indices, surfaceNormals);
-
-        // this.data = vertices
-        // this.indices = indices
-        // this.verticesForNormal = verticesForNormal
-        // this.updateNormals()
-        // console.log("check norms", this.normals)
     }
 
     render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
@@ -526,7 +522,9 @@ export class Cube extends HObj {
             matrix: this.getMatrix(),
             useIndices: true,
             material: this.material || {},
-            useReflection: this.useReflection
+            useReflection: this.useReflection,
+            texture: this.texture, 
+            texcoord: this.texcoord
         })
         this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
     }

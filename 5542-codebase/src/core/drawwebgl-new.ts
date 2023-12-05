@@ -6,13 +6,13 @@ import type { TAllowedShape, TAllowedColor } from "./setup-lab4"
 import { selectedShape, globalMode, colorMapping } from "./setup-lab4"
 import type { TCoordSpaceLayout } from "@/utils/matrix"
 import { globalInstance, HObj, Cylinder, Cube, Sphere, Global } from "@/utils/hierarchymodel"
-import { createOBJ, createEnvironObj } from "@/utils/obj";
+import { createOBJ, createEnvironObj, createSurface } from "@/utils/obj";
 import { ref, watch } from "vue";
 import { setUniforms } from "@/utils/objUtils"
 import { coreVertexShader, coreFragmentShader, envFragmentShader, envVertexShader } from "@/shaders"
 
 
-Global; watch; 
+Global; watch;
 export let angle_x = ref(-0.0579); // in degrees
 export let angle_y = ref(-0.25099); // in degrees 
 
@@ -21,6 +21,7 @@ let targetShapeOfMove: HObj | null = null
 const cameraDistance = ref(.5);
 
 export let cameraFreeMode = ref(true)
+export let freeRotate = ref(true)
 
 export let yaw = ref(0)
 export let pitch = ref(-5)
@@ -64,6 +65,9 @@ interface drawCommand {
     normals?: number[],
     material?: any,
     useReflection?: boolean,
+    texture?: any,
+    texcoord?: any,
+    showLineOnly?: boolean,
 }
 
 interface TSetter {
@@ -89,12 +93,12 @@ let envProgramContext: programContext;
 
 let light_ambient = [1, 1, 1, 1];
 let light_diffuse = [1, 1, 1, 1];
-let light_specular = [0, 0, 0, 1];
+let light_specular = [1, 1, 1, 1];
 // let light_pos = [0, 1, 3, 0];   // eye space position 
 
-let mat_ambient = [0.15, 0.15, 0.15, 1];
+let mat_ambient = [0.01, 0.01, 0.01, 1];
 let mat_diffuse = [1.5, 1.5, 1.5, 1];
-let mat_specular = [1, 1, 1, 1];
+let mat_specular = [.2, .2, .2, 1];
 let mat_shine = [10];
 
 let envTexture: any
@@ -129,10 +133,19 @@ export function toggleCameraFreeMode() {
     drawScene()
 }
 
+export function toggleAutoRotateMode() {
+    freeRotate.value = !freeRotate.value
+    if (freeRotate.value) {
+        requestAnimationFrame(simulateRotate)
+    }
+}
+
 export function zoomInOutCamera(amount: number) {
     cameraDistance.value += amount
     cameraDistance.value = Math.max(0.1, cameraDistance.value)
-    // drawScene()
+    if (!freeRotate.value) {
+        drawScene()
+    }
 }
 
 
@@ -283,9 +296,8 @@ export async function init(canvasEl: HTMLCanvasElement, reInit = true) {
     drawScene()
 }
 
-
+const baseURL = "src/assets/skybox/"
 async function initEvn() {
-    const baseURL = "src/assets/skybox/"
     const faceInfos = [
         {
             target: webgl.TEXTURE_CUBE_MAP_POSITIVE_X,
@@ -357,13 +369,13 @@ async function initShape() {
     // const cubeA = new Cube(0.03, [0.1, 0.4, .2, .2], globalInstance, true);
     // const sphereSS = new Sphere(0.05, 30, 30, [1, 0, 0, 1], globalInstance, true);
 
-    const bot = new Cylinder(0.04, 0.04, 0.005, 60, 100, [0.89, 0.6941, 0.5725, 1],);
+    const bot = new Cylinder(0.04, 0.04, 0.005, 60, 30, [0.89, 0.6941, 0.5725, 1], globalInstance, false);
     bot.translateDelta([0, -.1, 0])
 
-    const feet = new Cylinder(0.005, 0.005, .12, 60, 100, [0.89, 0.6941, 0.5725, 1], bot);
+    const feet = new Cylinder(0.005, 0.005, .12, 60, 30, [0.89, 0.6941, 0.5725, 1], bot);
     feet.translateDelta([0, 0.005, 0])
 
-    const tableSurface = new Cylinder(0.15, .15, 0.007, 60, 100, [0.89, 0.6941, 0.5725, 1], feet, false);
+    const tableSurface = new Cylinder(0.15, .15, 0.007, 60, 30, [0.89, 0.6941, 0.5725, 1], feet, false);
     tableSurface.translateDelta([0, .12, 0])
 
     const sphere = new Sphere(0.02, 30, 30, [1, 0, 0, 1], tableSurface, true);
@@ -388,43 +400,43 @@ async function initShape() {
     sphere2.translateDelta([0, 0.015 + 0.01, 0])
 
 
-    // const virtualAlbum = new Global([0, 0, 0], tableSurface);
-    // virtualAlbum.translateDelta([0.02, 0.02 + 0.007, 0])
-    // virtualAlbum.rotateY(.01)
+    const virtualAlbum = new Global([0, 0, 0], tableSurface);
+    virtualAlbum.translateDelta([0.02, 0.02 + 0.007, 0])
+    virtualAlbum.rotateY(.01)
 
 
-    // const ablumfeet = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet.translateDelta([0, 0, .1])
-    // ablumfeet.scale(.15, 1.7, .15)
-    // ablumfeet.rotateX(.5)
+    const ablumfeet = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet.translateDelta([0, 0, .1])
+    ablumfeet.scale(.15, 1.7, .15)
+    ablumfeet.rotateX(.5)
 
 
-    // const ablumfeet2 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet2.translateDelta([0.04, 0, .1])
-    // ablumfeet2.scale(.15, 1.7, .15)
-    // ablumfeet2.rotateX(.5)
+    const ablumfeet2 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet2.translateDelta([0.04, 0, .1])
+    ablumfeet2.scale(.15, 1.7, .15)
+    ablumfeet2.rotateX(.5)
 
 
-    // const ablumfeet3 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet3.translateDelta([0.02, -0.016, .11])
-    // ablumfeet3.scale(1.2, .15, .15)
+    const ablumfeet3 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet3.translateDelta([0.02, -0.016, .11])
+    ablumfeet3.scale(1.2, .15, .15)
 
 
-    // const ablumfeet4 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumfeet4.translateDelta([0.02, 0.02, 0.0895])
-    // ablumfeet4.scale(1.2, .15, .15)
+    const ablumfeet4 = new Cube(0.03, [0.23, 0.1686, .18, .2], virtualAlbum);
+    ablumfeet4.translateDelta([0.02, 0.02, 0.0895])
+    ablumfeet4.scale(1.2, .15, .15)
 
 
-    // const ablumBackground = new Cube(0.03, [1, 1, 1, .2], virtualAlbum);
-    // ablumBackground.translateDelta([0.02, 0.0011, 0.097])
-    // ablumBackground.scale(1.2, 1.5, .02)
-    // ablumBackground.rotateX(.5)
+    const ablumBackground = new Cube(0.03, [1, 1, 1, .2], virtualAlbum, false, `${baseURL}/family.jpg`, webgl);
+    ablumBackground.translateDelta([0.02, 0.0011, 0.097])
+    ablumBackground.scale(1.18, 1.3, .02)
+    ablumBackground.rotateX(.5)
 
 
-    // const ablumbackfeet = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
-    // ablumbackfeet.translateDelta([0.2, 0.15, 0.92])
-    // ablumbackfeet.scale(0.3, 0.98, .08)
-    // ablumbackfeet.rotateX(-.3)
+    // // const ablumbackfeet = new Cube(0.3, [0.23, 0.1686, .18, .2], virtualAlbum);
+    // // ablumbackfeet.translateDelta([0.2, 0.15, 0.92])
+    // // ablumbackfeet.scale(0.3, 0.98, .08)
+    // // ablumbackfeet.rotateX(-.3)
 
 
     const towerHref = "https://webglfundamentals.org/webgl/resources/models/windmill/windmill.obj"
@@ -434,7 +446,10 @@ async function initShape() {
     obj.rotateY(1)
 
 
-
+    const surface = createSurface(tableSurface, programContext, `${baseURL}/family.jpg`, webgl)
+    surface.scale(.01, .01, .02)
+    surface.rotateX(Math.PI / 2)
+    surface.translateDelta([-0.02, 0.016, 0.1])
     // targetShapeOfMove = obj
 
 }
@@ -461,13 +476,6 @@ function initProgram(vertexShaderObject, fragmentShaderObject) {
         uniformSetters: uniformSetters
     }
 
-    // const {vertexShaderObject: envVertexShaderObject, fragmentShaderObject: envFragmentShaderObject} = initShader(envVertexShader, envFragmentShader)
-    // console.log(envVertexShaderObject, envFragmentShaderObject)
-    // const envProgramObject = webgl.createProgram()
-    // webgl.attachShader(envProgramObject, envVertexShaderObject)
-    // webgl.attachShader(envProgramObject, envFragmentShaderObject)
-    // webgl.linkProgram(envProgramObject)
-    // webgl.useProgram(envProgramObject)
 }
 
 function initBuffers() {
@@ -529,7 +537,7 @@ export function drawScene() {
         mat4.transpose(normalMatrix, normalMatrix);
         if (command.shape === "environment") {
             let viewDirectionMatrix = mat4.create();
-            mat4.identity(viewDirectionMatrix); 
+            mat4.identity(viewDirectionMatrix);
             viewDirectionMatrix = mat4.copy(viewDirectionMatrix, viewMatrix);
             viewDirectionMatrix[12] = 0;
             viewDirectionMatrix[13] = 0;
@@ -558,8 +566,9 @@ export function drawScene() {
                 diffuse_coef: mat_diffuse,
                 specular_coef: mat_specular,
                 mat_shininess: mat_shine[0],
+                usePhoto: 0,
                 u_texture: envTexture,
-                TransformMat: command.matrix,
+                // TransformMat: command.matrix,
             })
         } else {
             webgl.depthFunc(webgl.LESS);
@@ -595,28 +604,63 @@ export function drawScene() {
             webgl.uniform1i(uUseTexture, 0);
             // const uProjectMat = webgl.getUniformLocation(programObject, "TransformMat");
 
-            setUniforms(programContext, {
-                ProjectMat,
-                viewMatrix,
-                eye_pos: eye,
-                light_ambient,
-                light_diffuse,
-                light_specular,
-                light_pos: [lightPosX.value, lightPosY.value, lightPosZ.value, 0],
-                ambient_coef: mat_ambient,
-                diffuse_coef: mat_diffuse,
-                specular_coef: mat_specular,
-                mat_shininess: mat_shine[0],
-                useReflection: command.useReflection ? 1 : 0,
-                u_texture: envTexture,
-                TransformMat: command.matrix, 
-                ...(command.material || {})
-            })
-            // webgl.uniformMatrix4fv(uProjectMat, false, command.matrix);
-            webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
+            if (command.texture && command.texcoord) {
+                console.log(command)
+                var texcoordLocation = webgl.getAttribLocation(programContext.program, "a_texcoord");
+                const texcoordBuffer = webgl.createBuffer();
+                webgl.bindBuffer(webgl.ARRAY_BUFFER, texcoordBuffer);
+                webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(command.texcoord), webgl.STATIC_DRAW);
+                webgl.enableVertexAttribArray(texcoordLocation);
+                webgl.vertexAttribPointer(texcoordLocation, 2, webgl.FLOAT, false, 0, 0);
+                setUniforms(programContext, {
+                    ProjectMat,
+                    viewMatrix,
+                    eye_pos: eye,
+                    light_ambient,
+                    light_diffuse,
+                    light_specular,
+                    light_pos: [lightPosX.value, lightPosY.value, lightPosZ.value, 0],
+                    ambient_coef: mat_ambient,
+                    diffuse_coef: mat_diffuse,
+                    specular_coef: mat_specular,
+                    mat_shininess: mat_shine[0],
+                    useReflection: command.useReflection ? 1 : 0,
+                    u_texture: envTexture,
+                    TransformMat: command.matrix,
+                    usePhoto: 1,
+                    u_photo_texture: command.texture,
+                    ...(command.material || {})
+                })
+            } else {
+                setUniforms(programContext, {
+                    ProjectMat,
+                    viewMatrix,
+                    eye_pos: eye,
+                    light_ambient,
+                    light_diffuse,
+                    light_specular,
+                    light_pos: [lightPosX.value, lightPosY.value, lightPosZ.value, 0],
+                    ambient_coef: mat_ambient,
+                    diffuse_coef: mat_diffuse,
+                    specular_coef: mat_specular,
+                    mat_shininess: mat_shine[0],
+                    useReflection: command.useReflection ? 1 : 0,
+                    u_texture: envTexture,
+                    TransformMat: command.matrix,
+                    useTexture: 0, 
+                    usePhoto: 0,
+                })
+            }
+            if (command.showLineOnly) {
+                webgl.drawElements(webgl.LINES, command.count, webgl.UNSIGNED_SHORT, 0) 
+            } else {
+                webgl.drawElements(webgl.TRIANGLES, command.count, webgl.UNSIGNED_SHORT, 0)
+            }
         }
     })
-    requestAnimationFrame(simulateRotate)
+    if (freeRotate.value) {
+        requestAnimationFrame(simulateRotate)
+    }
 }
 
 function htmlCoordToWebglCoord(htmlCoord: number[], containerSize: number[], canvasSpaceLayout: TCoordSpaceLayout) {

@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { changeLightPosX, changeLightPosY, changeLightPosZ, zoomInOutCamera, angle_x, angle_y, changeYaw, changePitch, changeRoll, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
+import { freeRotate, changeCameraRedraw, changeLightPosX, changeLightPosY, changeLightPosZ, zoomInOutCamera, angle_x, angle_y, changeYaw, changePitch, changeRoll, addShape, rotateShape, moveTargetObjectLeft, moveTargetObjectBack, moveTargetObjectForward, moveTargetObjectRight, detectCandidateObjectOfInterest, confirmObjectOfInterest, rotateGlobal, } from "./drawwebgl-new";
 import { globalInstance } from "@/utils/hierarchymodel";
 
 
@@ -217,7 +217,7 @@ export function bindCameraMouseControlEvent() {
 
     document.addEventListener("wheel", (event: WheelEvent) => {
 
-        zoomCameraDistance(event.deltaY * 0.0005);
+        zoomCameraDistance(event.deltaY * 0.0001);
 
     });
 
@@ -258,8 +258,9 @@ function onDocumentMouseMove(event: MouseEvent) {
     // console.log(Z_angle)
     lastMouseX.value = mouseX;
     lastMouseY.value = mouseY;
-
-    // changeCameraRedraw();
+    if (!freeRotate.value) {
+        changeCameraRedraw();
+    }
 }
 
 function onDocumentMouseUp() {

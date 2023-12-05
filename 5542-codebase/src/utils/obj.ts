@@ -1,10 +1,11 @@
 import { HObj, globalInstance } from "./hierarchymodel"
+// import { matmul, getRotateXMatrix } from "@/utils/matrix"
 import { parseOBJ, parseMTL, createTexture, create1PixelTexture, generateTangents, setBuffersAndAttributes, setUniforms, computeSurfaceNormals, computeVertexNormals, requestCORSIfNotSameOrigin } from "./objUtils"
 import { createBufferInfoFromArrays, drawBufferInfo } from "./webglUtils"
 // import { subtractVector, scaleVector, addVector } from "./matrix";
 import type { programContext } from "@/core/drawwebgl-new"
 import { createXYQuadVertices } from "./envUtils"
-
+let time = 0
 export class OBJGeneral extends HObj {
     public objectType: string = "obj-general";
     constructor(parts: any, parent: HObj | null = null) {
@@ -25,18 +26,19 @@ export class OBJGeneral extends HObj {
                 // const uUseTexture = gl.getUniformLocation(programContext.program, "useTexture");
                 // gl.uniform1i(uUseTexture, 1);
                 gl.useProgram(programContext.program);
-                for (const { bufferInfo, material } of dataParts) {                    
+                for (const { bufferInfo, material } of dataParts) {
                     // calls gl.bindBuffer, gl.enableVertexAttribArray, gl.vertexAttribPointer
                     setBuffersAndAttributes(gl, programContext, bufferInfo);
                     // calls gl.uniform
                     setUniforms(programContext, {
                         useReflection: this.useReflection || (bufferInfo.numElements < 2000) ? 1 : 0,
-                        TransformMat: this.getMatrix(),
+                        TransformMat: (bufferInfo.numElements < 2000) ? this.getMatrix(time) : this.getMatrix(),
                         useTexture: 1,
                         ...sharedMatrix,
                     }, material);
                     drawBufferInfo(gl, bufferInfo);
                 }
+                time += .05;
             }
         })
     }
@@ -186,7 +188,6 @@ export async function createOBJ(gl: WebGLRenderingContext, objHref: string = 'ht
 
     const parts = obj.geometries.map(({ material, data }) => {
 
-
         if (data.color) {
             if (data.position.length === data.color.length) {
                 // it's 3. The our helper library assumes 4 so we need
@@ -247,4 +248,171 @@ export async function createOBJ(gl: WebGLRenderingContext, objHref: string = 'ht
     const objGeneral = new OBJGeneral(parts, parent)
     // objGeneral.translate(Array.from(objOffset))
     return objGeneral
+}
+
+
+
+
+export function createSurface(parent:HObj, programContext: programContext, textureURL?: string, gl?: WebGLRenderingContext) {
+    const surfaceConfig = {
+        slices: 80,
+        loops: 40,
+        inner_rad: 0.5,
+        outerRad: 2,
+    }
+    const color = [1, 0, 0, 1]
+    function makeVerts() {
+        let vertices = [];
+        let indices = [];
+        let normals = [];
+        let texCoords = [];
+
+        for (let slice = 0; slice <= surfaceConfig.slices; ++slice) {
+            const v = slice / surfaceConfig.slices;
+            const slice_angle = v * 2 * Math.PI;
+            const cos_slices = Math.cos(slice_angle);
+            const sin_slices = Math.sin(slice_angle);
+            const slice_rad = surfaceConfig.outerRad + surfaceConfig.inner_rad * cos_slices;
+
+            for (let loop = 0; loop <= surfaceConfig.loops; ++loop) {
+                //   x=(R+r·cos(v))cos(w)
+                //   y=(R+r·cos(v))sin(w)
+                //             z=r.sin(v)
+                const u = loop / surfaceConfig.loops;
+                const loop_angle = u * 2 * Math.PI;
+                const cos_loops = Math.cos(loop_angle);
+                const sin_loops = Math.sin(loop_angle);
+
+                const x = slice_rad * cos_loops;
+                const y = slice_rad * sin_loops;
+                const z = surfaceConfig.inner_rad * sin_slices;
+
+                vertices.push(x, y, z, ...color);
+                normals.push(
+                    cos_loops * sin_slices,
+                    sin_loops * sin_slices,
+                    cos_slices);
+
+                texCoords.push(u);
+                texCoords.push(v);
+            }
+        }
+
+
+        // 0  1  2  3  4  5
+        // 6  7  8  9  10 11
+        // 12 13 14 15 16 17
+
+        const vertsPerSlice = surfaceConfig.loops + 1;
+        for (let i = 0; i < surfaceConfig.slices; ++i) {
+            let v1 = i * vertsPerSlice;
+            let v2 = v1 + vertsPerSlice;
+
+            for (let j = 0; j < surfaceConfig.loops; ++j) {
+
+                indices.push(v1);
+                indices.push(v1 + 1);
+                indices.push(v2);
+
+                indices.push(v2);
+                indices.push(v1 + 1);
+                indices.push(v2 + 1);
+
+                v1 += 1;
+                v2 += 1;
+            }
+        }
+        //this.indices = undefined;
+        return {
+            position: vertices,
+            indices: indices,
+            normal: normals,
+            texcoord: texCoords,
+        }
+    }
+    const { position, indices, normal, texcoord } = makeVerts()
+    return new Surface(position, indices, normal, texcoord, programContext, parent, textureURL, gl)
+}
+
+export class Surface extends HObj {
+    public objectType: string = "surface";
+    public programContext: programContext
+    public texcoord: any
+    public texture: any
+    public showLineOnly: boolean = false
+    public showReflection: boolean = false 
+
+    constructor(data, indices, normal, texcoord, programContext: programContext, parent: HObj | null = null, textureURL?: string, gl?: WebGLRenderingContext) {
+        super([0, 0, 0], parent || globalInstance)
+        this.programContext = programContext
+        this.data = data
+        this.indices = indices
+        this.normals = normal
+        this.texcoord = texcoord
+        if (textureURL) this.initializeTexture(gl, textureURL)
+    }
+
+    toggleShowLineOnly() {
+        this.showLineOnly = !this.showLineOnly
+    }
+
+    toggleShowReflection() {
+        this.showReflection = !this.showReflection
+        if (this.showReflection) {
+            this.showLineOnly = false
+        }
+    }
+
+    initializeTexture(gl: WebGLRenderingContext, textureURL: string) {
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        // Fill the texture with a 1x1 blue pixel.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+            new Uint8Array([0, 0, 255, 255]));
+
+        // let's assume all images are not a power of 2
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        var textureInfo = {
+            width: 1,   // we don't know the size until it loads
+            height: 1,
+            texture: tex,
+        };
+        var img = new Image();
+        img.addEventListener('load', function () {
+            textureInfo.width = img.width;
+            textureInfo.height = img.height;
+
+            gl.bindTexture(gl.TEXTURE_2D, textureInfo.texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        });
+        requestCORSIfNotSameOrigin(img, textureURL);
+        img.src = textureURL;
+        this.texture = tex
+    }
+
+    render(dataContainer: number[], commandContainer: any[], indicesDataContainer: any[]) {
+        dataContainer.length;
+        indicesDataContainer.length;
+        const existingIndicesLength = indicesDataContainer.length
+        this.data.forEach(e => dataContainer.push(e))
+        this.indices.forEach(e => indicesDataContainer.push(e))
+        commandContainer.push({
+            shape: this.objectType,
+            matrix: this.getMatrix(),
+            useIndices: true,
+            vertices: this.data, 
+            indices: this.indices,
+            texcoord: this.texcoord,
+            count: this.indices.length,
+            normals: this.normals,
+            useReflection: this.showReflection, 
+            offset: existingIndicesLength * 2,
+            texture: !this.showReflection?this.texture:undefined, 
+            showLineOnly: this.showLineOnly,
+        })
+        this.children.forEach(child => child.render(dataContainer, commandContainer, indicesDataContainer))
+    }
 }
